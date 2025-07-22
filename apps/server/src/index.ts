@@ -1,7 +1,7 @@
-import express from 'express';
+import express, { Express } from 'express';
 import { Pool } from 'pg';
 
-const app = express();
+const app: Express = express();
 const pool = new Pool({
   user: "postgres",      // your db user
   host: "localhost",
@@ -15,7 +15,13 @@ app.get("/", async (req, res) => {
   res.send(result.rows);
 });
 
+app.get("/health", (req, res) => {
+  res.status(200).send("OK");
+});
+
 const port = 3001;
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
+
+export default app;
