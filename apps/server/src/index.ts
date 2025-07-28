@@ -5,11 +5,15 @@ import cors from 'cors';
 import passport from 'passport';
 import session from 'express-session';
 import { Strategy as LocalStrategy } from 'passport-local';
+import swaggerJSDoc from 'swagger-jsdoc';
+import swaggerUi from 'swagger-ui-express';
 import users from './routes/users';
-
-import dotenv from 'dotenv';
 import products from './routes/products';
 import orders from './routes/orders';
+import carts from './routes/carts';
+
+import dotenv from 'dotenv';
+import categories from './routes/categories';
 dotenv.config({
    path: `./.env.${process.env.NODE_ENV ? `${process.env.NODE_ENV}` : 'development'}`
 });
@@ -23,6 +27,22 @@ export const pool = new Pool({
 });
 
 const app: Express = express();
+
+const options = {
+  swaggerDefinition: {
+    openapi: '3.0.0',
+    info: {
+      title: 'E-Commerce API',
+      version: '1.0.0',
+    },
+  },
+  apis: ['./src/routes/*.ts'],
+};
+
+// initialize swagger-jsdoc
+var swaggerSpec = swaggerJSDoc(options);
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
 app.use(express.json());
 app.use(cors({ origin: process.env.CORS_ORIGIN!, credentials: true }));
 app.use(
@@ -70,6 +90,8 @@ passport.use(
 app.use('/api/users', users);
 app.use('/api/products', products);
 app.use('/api/orders', orders);
+app.use('/api/carts', carts); 
+app.use('/api/categories', categories);
 
 app.post('/login', passport.authenticate('local'), (req: Request, res: Response) => {
    res.status(200).send({ user: { ...req.user, password: undefined } });
