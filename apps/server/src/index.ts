@@ -24,21 +24,25 @@ export const pool = new Pool({
    // Try non-pooling connection first (often more reliable for SSL)
    connectionString: process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL,
    // Comprehensive SSL configuration for Supabase
-   ssl: process.env.NODE_ENV === 'production' 
-      ? { rejectUnauthorized: false }
-      : process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
-      ? { 
-          rejectUnauthorized: false,
-          ca: undefined,
-          key: undefined,
-          cert: undefined
-        }
-      : false
+   ssl:
+      process.env.NODE_ENV === 'production'
+         ? { rejectUnauthorized: false }
+         : process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
+           ? {
+                rejectUnauthorized: false,
+                ca: undefined,
+                key: undefined,
+                cert: undefined
+             }
+           : false
 });
 
 // Test database connection on startup
 console.log('🔌 Attempting database connection...');
-console.log('Connection string being used:', process.env.POSTGRES_URL_NON_POOLING ? 'NON_POOLING' : 'POOLING');
+console.log(
+   'Connection string being used:',
+   process.env.POSTGRES_URL_NON_POOLING ? 'NON_POOLING' : 'POOLING'
+);
 
 pool.connect((err, client, release) => {
    if (err) {
@@ -93,6 +97,7 @@ const corsOptions = {
          ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
          : ['http://localhost:3000', 'http://localhost:3001'];
 
+      console.log(`CORS allowed origins: ${allowedOrigins.join(', ')}`);
       if (allowedOrigins.includes(origin)) {
          callback(null, true);
       } else {
