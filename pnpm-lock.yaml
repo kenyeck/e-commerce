@@ -53,6 +53,9 @@ importers:
       swagger-ui-express:
         specifier: ^5.0.1
         version: 5.0.1(express@5.1.0)
+      typescript:
+        specifier: ^5.8.3
+        version: 5.8.3
     devDependencies:
       '@e-commerce/types':
         specifier: workspace:*
@@ -102,9 +105,6 @@ importers:
       tsx:
         specifier: ^4.20.3
         version: 4.20.3
-      typescript:
-        specifier: ^5.8.3
-        version: 5.8.3
 
   apps/web:
     dependencies:
