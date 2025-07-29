@@ -108,6 +108,7 @@ CREATE TABLE "order" (
     order_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL,
     status VARCHAR(50) DEFAULT 'pending',
+    total_amount DECIMAL(10,2) NOT NULL,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES "user"(user_id)
