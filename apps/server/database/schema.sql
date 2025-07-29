@@ -2,57 +2,57 @@
 
 -- User table (must be created first as other tables reference it)
 CREATE TABLE "user" (
-    userId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     username VARCHAR(50) UNIQUE NOT NULL,
     email VARCHAR(255) UNIQUE NOT NULL,
-    passwordHash VARCHAR(255) NOT NULL,
-    firstName VARCHAR(100),
-    lastName VARCHAR(100),
+    password_hash VARCHAR(255) NOT NULL,
+    first_name VARCHAR(100),
+    last_name VARCHAR(100),
     phone VARCHAR(20),
-    isActive BOOLEAN DEFAULT true,
-    isEmailVerified BOOLEAN DEFAULT false,
-    lastLoginAt TIMESTAMP,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    is_active BOOLEAN DEFAULT true,
+    is_email_verified BOOLEAN DEFAULT false,
+    last_login_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Add indexes for user table
 CREATE INDEX idx_user_email ON "user"(email);
 CREATE INDEX idx_user_username ON "user"(username);
-CREATE INDEX idx_user_active ON "user"(isActive);
+CREATE INDEX idx_user_active ON "user"(is_active);
 
 -- Category table (for product categorization)
 CREATE TABLE category (
-    categoryId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    category_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(100) UNIQUE NOT NULL,
     description TEXT,
-    parentCategoryId UUID,
-    isActive BOOLEAN DEFAULT true,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (parentCategoryId) REFERENCES category(categoryId)
+    parent_category_id UUID,
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (parent_category_id) REFERENCES category(category_id)
 );
 
 -- Product table
 CREATE TABLE product (
-    productId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    product_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name VARCHAR(255) NOT NULL,
     description TEXT,
     price DECIMAL(10,2) NOT NULL CHECK (price >= 0),
     stock INTEGER NOT NULL DEFAULT 0 CHECK (stock >= 0),
-    categoryId UUID,
+    category_id UUID,
     sku VARCHAR(100) UNIQUE,
     weight DECIMAL(8,2),
     dimensions JSONB, -- Store as {"length": 10, "width": 5, "height": 2}
-    isActive BOOLEAN DEFAULT true,
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (categoryId) REFERENCES category(categoryId)
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (category_id) REFERENCES category(category_id)
 );
 
 -- Add indexes for product
-CREATE INDEX idx_product_category ON product(categoryId);
-CREATE INDEX idx_product_active ON product(isActive);
+CREATE INDEX idx_product_category ON product(category_id);
+CREATE INDEX idx_product_active ON product(is_active);
 CREATE INDEX idx_product_price ON product(price);
 CREATE INDEX idx_product_stock ON product(stock);
 CREATE INDEX idx_product_sku ON product(sku);
@@ -83,58 +83,58 @@ CREATE INDEX idx_product_sku ON product(sku);
 
 -- Cart table (simplified, no orderItems array)
 CREATE TABLE cart (
-    cartId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    userId UUID NOT NULL,
+    cart_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
     status VARCHAR(50) DEFAULT 'active',
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (userId) REFERENCES "user"(userId)
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES "user"(user_id)
 );
 
 -- CartItems table (separate table for cart items)
 CREATE TABLE cart_item (
-    cartItemId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    cartId UUID NOT NULL,
-    productId UUID NOT NULL,
+    cart_item_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    cart_id UUID NOT NULL,
+    product_id UUID NOT NULL,
     quantity INTEGER NOT NULL CHECK (quantity > 0),
-    addedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (cartId) REFERENCES cart(cartId) ON DELETE CASCADE,
-    FOREIGN KEY (productId) REFERENCES product(productId),
-    UNIQUE(cartId, productId) -- Prevent duplicate product in same cart
+    added_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (cart_id) REFERENCES cart(cart_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES product(product_id),
+    UNIQUE(cart_id, product_id) -- Prevent duplicate product in same cart
 );
 
 -- Order table (simplified, no orderItems array)
 CREATE TABLE "order" (
-    orderId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    userId UUID NOT NULL,
+    order_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID NOT NULL,
     status VARCHAR(50) DEFAULT 'pending',
-    createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (userId) REFERENCES "user"(userId)
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES "user"(user_id)
 );
 
 -- OrderItems table (separate table for order items)
 CREATE TABLE order_item (
-    orderItemId UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    orderId UUID NOT NULL,
-    productId UUID NOT NULL,
+    order_item_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    order_id UUID NOT NULL,
+    product_id UUID NOT NULL,
     quantity INTEGER NOT NULL CHECK (quantity > 0),
-    priceAtTime DECIMAL(10,2) NOT NULL, -- Store price when order was placed
-    FOREIGN KEY (orderId) REFERENCES "order"(orderId) ON DELETE CASCADE,
-    FOREIGN KEY (productId) REFERENCES product(productId)
+    price_at_time DECIMAL(10,2) NOT NULL, -- Store price when order was placed
+    FOREIGN KEY (order_id) REFERENCES "order"(order_id) ON DELETE CASCADE,
+    FOREIGN KEY (product_id) REFERENCES product(product_id)
 );
 
 -- Indexes for better performance
-CREATE INDEX idx_cart_item_cart_id ON cart_item(cartId);
-CREATE INDEX idx_cart_item_product_id ON cart_item(productId);
-CREATE INDEX idx_order_item_order_id ON order_item(orderId);
-CREATE INDEX idx_order_item_product_id ON order_item(productId);
+CREATE INDEX idx_cart_item_cart_id ON cart_item(cart_id);
+CREATE INDEX idx_cart_item_product_id ON cart_item(product_id);
+CREATE INDEX idx_order_item_order_id ON order_item(order_id);
+CREATE INDEX idx_order_item_product_id ON order_item(product_id);
 
 -- Function to automatically update updatedAt timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
-    NEW.updatedAt = CURRENT_TIMESTAMP;
+    NEW.updated_at = CURRENT_TIMESTAMP;
     RETURN NEW;
 END;
 $$ language 'plpgsql';
@@ -152,8 +152,8 @@ CREATE TRIGGER update_product_updated_at BEFORE UPDATE ON product
 -- CREATE TRIGGER update_addresses_updated_at BEFORE UPDATE ON addresses
 --     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_cart2_updated_at BEFORE UPDATE ON cart
+CREATE TRIGGER update_cart_updated_at BEFORE UPDATE ON cart
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
-CREATE TRIGGER update_order2_updated_at BEFORE UPDATE ON "order"
+CREATE TRIGGER update_order_updated_at BEFORE UPDATE ON "order"
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

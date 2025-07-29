@@ -1,6 +1,7 @@
-import express, { Router, Request, Response } from "express";
-import bcrypt from "bcrypt";
-import { pool } from "..";
+import express, { Router, Request, Response } from 'express';
+import bcrypt from 'bcrypt';
+import { pool } from '..';
+import { convertToCamelCase } from '../utils/convertToCamelCase';
 
 const router: Router = express.Router();
 
@@ -134,12 +135,12 @@ router.get('/', async (req: Request, res: Response) => {
    try {
       let result = await pool.query(`
          SELECT 
-            userId, username, email, firstName, lastName, phone, 
-            isActive, isEmailVerified, lastLoginAt, createdAt, updatedAt
+            user_id, username, email, first_name, last_name, phone, 
+            is_active, is_email_verified, last_login_at, created_at, updated_at
          FROM "user" 
-         ORDER BY createdAt DESC
+         ORDER BY created_at DESC
       `);
-      res.status(200).send(result.rows);
+      res.status(200).send(convertToCamelCase(result.rows));
    } catch (error) {
       console.error('Error fetching users:', error);
       res.status(500).send('Internal Server Error');
@@ -183,21 +184,24 @@ router.get('/', async (req: Request, res: Response) => {
  *               type: string
  *               example: Internal Server Error
  */
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/profile', async (req: Request, res: Response) => {
    try {
       const userId = req.params.id;
-      let result = await pool.query(`
+      let result = await pool.query(
+         `
          SELECT 
-            userId, username, email, firstName, lastName, phone, 
-            isActive, isEmailVerified, lastLoginAt, createdAt, updatedAt
+            user_id, username, email, first_name, last_name, phone, 
+            is_active, is_email_verified, last_login_at, created_at, updated_at
          FROM "user" 
-         WHERE userId = $1
-      `, [userId]);
-      
+         WHERE user_id = $1
+      `,
+         [userId]
+      );
+
       if (result.rows.length === 0) {
          return res.status(404).send('User not found');
       }
-      res.status(200).send(result.rows[0]);
+      res.status(200).send(convertToCamelCase(result.rows[0]));
    } catch (error) {
       console.error('Error fetching user:', error);
       res.status(500).send('Internal Server Error');
@@ -249,7 +253,7 @@ router.get('/:id', async (req: Request, res: Response) => {
  */
 router.put('/:id', async (req: Request, res: Response) => {
    try {
-      const { username, email, firstName, lastName, phone, isActive } = req.body;
+      const { username, email, firstName, lastName, phone, password, isActive } = req.body;
       const userId = req.params.id;
 
       // Build dynamic update query
@@ -266,19 +270,25 @@ router.put('/:id', async (req: Request, res: Response) => {
          updateValues.push(email);
       }
       if (firstName) {
-         updateFields.push(`firstName = $${paramCount++}`);
+         updateFields.push(`first_name = $${paramCount++}`);
          updateValues.push(firstName);
       }
       if (lastName) {
-         updateFields.push(`lastName = $${paramCount++}`);
+         updateFields.push(`last_name = $${paramCount++}`);
          updateValues.push(lastName);
       }
       if (phone) {
          updateFields.push(`phone = $${paramCount++}`);
          updateValues.push(phone);
       }
+      if (password) {
+         const saltRounds = 10;
+         const hashedPassword = await bcrypt.hash(password, saltRounds);
+         updateFields.push(`password_hash = $${paramCount++}`);
+         updateValues.push(hashedPassword);
+      }
       if (isActive !== undefined) {
-         updateFields.push(`isActive = $${paramCount++}`);
+         updateFields.push(`is_active = $${paramCount++}`);
          updateValues.push(isActive);
       }
 
@@ -286,11 +296,11 @@ router.put('/:id', async (req: Request, res: Response) => {
          return res.status(400).send('No fields to update');
       }
 
-      updateFields.push(`updatedAt = CURRENT_TIMESTAMP`);
+      updateFields.push(`updated_at = CURRENT_TIMESTAMP`);
       updateValues.push(userId);
 
       let result = await pool.query(
-         `UPDATE "user" SET ${updateFields.join(', ')} WHERE userId = $${paramCount} RETURNING *`,
+         `UPDATE "user" SET ${updateFields.join(', ')} WHERE user_id = $${paramCount} RETURNING *`,
          updateValues
       );
 
@@ -299,13 +309,13 @@ router.put('/:id', async (req: Request, res: Response) => {
       }
 
       // Remove password hash from response
-      const user = result.rows[0];
-      delete user.passwordHash;
-      
-      res.status(200).send(user);
+      const { passwordHash, ...userWithoutPassword } = convertToCamelCase(result.rows[0]);
+
+      res.status(200).send(userWithoutPassword);
    } catch (error: any) {
       console.error('Error updating user:', error);
-      if (error.code === '23505') { // Unique constraint violation
+      if (error.code === '23505') {
+         // Unique constraint violation
          res.status(400).send('Username or email already exists');
       } else {
          res.status(500).send('Internal Server Error');
@@ -353,11 +363,14 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
    try {
       const userId = req.params.id;
-      let result = await pool.query('DELETE FROM "user" WHERE userId = $1 RETURNING *', [userId]);
+      let result = await pool.query('DELETE FROM "user" WHERE user_id = $1 RETURNING *', [userId]);
       if (result.rows.length === 0) {
          return res.status(404).send('User not found');
       }
-      res.status(200).send(result.rows[0]);
+      
+      // Remove password hash and convert to camelCase
+      const { passwordHash, ...userWithoutPassword } = convertToCamelCase(result.rows[0]);
+      res.status(200).send(userWithoutPassword);
    } catch (error) {
       console.error('Error deleting user:', error);
       res.status(500).send('Internal Server Error');
@@ -366,9 +379,9 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /api/users/register:
+ * /api/users/:
  *   post:
- *     summary: Register a new user
+ *     summary: Create a new user
  *     description: Create a new user account with username, email, and password
  *     tags: [Users]
  *     requestBody:
@@ -415,20 +428,20 @@ router.delete('/:id', async (req: Request, res: Response) => {
  *               type: string
  *               example: Internal Server Error
  */
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/', async (req: Request, res: Response) => {
    try {
       const { username, password, email, firstName, lastName, phone } = req.body;
-      
+
       if (!username || !password || !email) {
          return res.status(400).send('username, password, and email are required');
       }
 
       // Check if user already exists by username or email
       let existingUser = await pool.query(
-         'SELECT userId FROM "user" WHERE username = $1 OR email = $2', 
+         'SELECT user_id FROM "user" WHERE username = $1 OR email = $2',
          [username, email]
       );
-      
+
       if (existingUser.rows.length > 0) {
          return res.status(400).send('User with this username or email already exists');
       }
@@ -437,19 +450,19 @@ router.post('/register', async (req: Request, res: Response) => {
       const hashedPassword = await bcrypt.hash(password, saltRounds);
 
       let result = await pool.query(
-         `INSERT INTO "user" (username, passwordHash, email, firstName, lastName, phone) 
+         `INSERT INTO "user" (username, password_hash, email, first_name, last_name, phone) 
           VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
          [username, hashedPassword, email, firstName, lastName, phone]
       );
 
-      // Remove password hash from response
-      const user = result.rows[0];
-      delete user.passwordHash;
+      // Remove password hash from response and convert to camelCase
+      const { passwordHash, ...userWithoutPassword } = convertToCamelCase(result.rows[0]);
 
-      res.status(201).send(user);
+      res.status(201).send(userWithoutPassword);
    } catch (error: any) {
       console.error('Error registering user:', error);
-      if (error.code === '23505') { // Unique constraint violation
+      if (error.code === '23505') {
+         // Unique constraint violation
          res.status(400).send('Username or email already exists');
       } else {
          res.status(500).send('Internal Server Error');
