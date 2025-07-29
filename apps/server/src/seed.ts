@@ -7,7 +7,7 @@ dotenv.config({
 });
 
 console.log('🚀 Starting database seeding...');
-console.log('📊 Database:', process.env.POSTGRES_DB);
+console.log('📊 Database:', process.env.POSTGRES_DATABASE);
 console.log('🏠 Host:', process.env.POSTGRES_HOST);
 
 runSeeder();
