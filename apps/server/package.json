@@ -5,7 +5,7 @@
    "main": "index.js",
    "scripts": {
       "dev": "tsx watch src/index.ts",
-      "build": "tsc",
+      "build": "npx tsc",
       "start": "node dist/index.js",
       "lint": "eslint src --ext .ts",
       "type-check": "tsc --noEmit",
@@ -26,8 +26,7 @@
       "passport-local": "^1.0.0",
       "pg": "^8.16.3",
       "swagger-jsdoc": "^6.2.8",
-      "swagger-ui-express": "^5.0.1",
-      "typescript": "^5.8.3"
+      "swagger-ui-express": "^5.0.1"
    },
    "devDependencies": {
       "@e-commerce/types": "workspace:*",
@@ -45,6 +44,7 @@
       "cross-env": "^10.0.0",
       "nodemon": "^3.1.10",
       "ts-node": "^10.9.2",
-      "tsx": "^4.20.3"
+      "tsx": "^4.20.3",
+      "typescript": "^5.8.3"
    }
 }
