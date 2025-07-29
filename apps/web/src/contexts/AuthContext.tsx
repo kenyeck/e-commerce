@@ -1,7 +1,7 @@
 'use client';
 
-import React, { createContext, useContext, ReactNode } from 'react';
-import { useAuth as useAuthHook } from '../lib/api';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { apiClient } from '../lib/api';
 import type { User, LoginRequest } from '../lib/api';
 
 interface AuthContextType {
@@ -17,10 +17,66 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const auth = useAuthHook();
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  return <AuthContext.Provider value={auth}>{children}</AuthContext.Provider>;
+  const checkAuth = useCallback(async () => {
+    try {
+      setLoading(true);
+      const response = await apiClient.getUserProfile();
+      setUser(response);
+      setError(null);
+    } catch (err) {
+      setUser(null);
+      setError(err instanceof Error ? err.message : 'Authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const login = useCallback(async (credentials: LoginRequest) => {
+    try {
+      setLoading(true);
+      const response = await apiClient.login(credentials);
+      setUser(response.user);
+      setError(null);
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Login failed');
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const logout = useCallback(async () => {
+    try {
+      await apiClient.logout();
+      setUser(null);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Logout failed');
+    }
+  }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  const value: AuthContextType = {
+    user,
+    userId: user?.userId,
+    loading,
+    error,
+    login,
+    logout,
+    checkAuth,
+    isAuthenticated: !!user
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
 export const useAuth = (): AuthContextType => {

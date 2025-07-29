@@ -1,4 +1,4 @@
-import express, { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response } from 'express';
 import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
 import _ from 'lodash';
@@ -193,7 +193,7 @@ app.post('/api/login', (req: Request, res: Response, next) => {
          }
          console.log('Login successful, user logged in');
          // Remove sensitive information
-         const { passwordhash, ...userWithoutPassword } = user;
+         const { passwordHash, ...userWithoutPassword } = user;
          res.status(200).json({
             message: 'Login successful',
             user: userWithoutPassword
@@ -212,16 +212,6 @@ app.post('/api/logout', (req: Request, res: Response) => {
       console.log('Logout successful');
       res.status(200).json({ message: 'Logged out successfully' });
    });
-});
-
-app.get('/api/profile', ensureAuthenticated, (req: Request, res: Response) => {
-   console.log('Profile request received, user:', convertToCamelCase(req.user!));
-   if (req.user) {
-      const { passwordhash, ...userWithoutPassword } = req.user as any;
-      res.status(200).json({ user: userWithoutPassword });
-   } else {
-      res.status(401).json({ error: 'User not authenticated' });
-   }
 });
 
 app.get('/api/health', (req, res) => {
@@ -251,13 +241,3 @@ app.listen(port, () => {
 });
 
 export default app;
-
-function ensureAuthenticated(req: Request, res: Response, next: NextFunction) {
-   console.log('Auth check - isAuthenticated:', req.isAuthenticated());
-   console.log('Auth check - user:', req.user ? 'User exists' : 'No user');
-
-   if (req.isAuthenticated()) {
-      return next();
-   }
-   res.status(401).json({ error: 'Unauthorized - Please log in' });
-}

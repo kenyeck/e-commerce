@@ -1,5 +1,6 @@
 import express, { Router, Request, Response } from 'express';
 import { pool } from '..';
+import { convertToCamelCase } from '../utils/convertToCamelCase';
 
 const router: Router = express.Router();
 
@@ -223,7 +224,7 @@ router.get('/', async (req: Request, res: Response) => {
          `SELECT * FROM product ${categoryId ? 'WHERE categoryId = $1' : ''}`,
          categoryId ? [categoryId] : []
       );
-      res.status(200).send(result.rows);
+      res.status(200).send(convertToCamelCase(result.rows));
    } catch (error) {
       console.error('Error fetching products:', error);
       res.status(500).send('Internal Server Error');
@@ -275,7 +276,7 @@ router.get('/:id', async (req: Request, res: Response) => {
       if (result.rows.length === 0) {
          return res.status(404).send('Product not found');
       }
-      res.status(200).send(result.rows[0]);
+      res.status(200).send(convertToCamelCase(result.rows[0]));
    } catch (error) {
       console.error('Error fetching product:', error);
       res.status(500).send('Internal Server Error');
@@ -349,7 +350,7 @@ router.post('/', async (req: Request, res: Response) => {
          'INSERT INTO product (name, description, price, stock, categoryId) VALUES ($1, $2, $3, $4, $5) RETURNING *',
          [name, description, price, stock, categoryId]
       );
-      res.status(201).send(result.rows[0]);
+      res.status(201).send(convertToCamelCase(result.rows[0]));
    } catch (error) {
       console.error('Error creating product:', error);
       res.status(500).send('Internal Server Error');
@@ -412,7 +413,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       if (result.rows.length === 0) {
          return res.status(404).send('Product not found');
       }
-      res.status(200).send(result.rows[0]);
+      res.status(200).send(convertToCamelCase(result.rows[0]));
    } catch (error) {
       console.error('Error updating product:', error);
       res.status(500).send('Internal Server Error');
@@ -466,7 +467,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
       if (result.rows.length === 0) {
          return res.status(404).send('Product not found');
       }
-      res.status(200).send(result.rows[0]);
+      res.status(200).send(convertToCamelCase(result.rows[0]));
    } catch (error) {
       console.error('Error deleting product:', error);
       res.status(500).send('Internal Server Error');

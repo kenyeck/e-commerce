@@ -1,5 +1,6 @@
 import express, { Router, Request, Response } from 'express';
 import { pool } from '..';
+import { convertToCamelCase } from '../utils/convertToCamelCase';
 
 const router: Router = express.Router();
 
@@ -129,36 +130,81 @@ router.get('/', async (req: Request, res: Response) => {
    try {
       let result = await pool.query(`
          SELECT 
-            c.cartId, 
-            c.userId, 
+            c.cart_id, 
+            c.user_id, 
             c.status,
-            c.createdAt,
-            c.updatedAt,
+            c.created_at,
+            c.updated_at,
             COALESCE(
                json_agg(
                   json_build_object(
-                     'cartItemId', ci.cartItemId,
-                     'productId', ci.productId,
+                     'cartItemId', ci.cart_item_id,
+                     'productId', ci.product_id,
                      'quantity', ci.quantity,
-                     'addedAt', ci.addedAt,
+                     'addedAt', ci.added_at,
                      'productName', p.name,
                      'productPrice', p.price
                   )
-               ) FILTER (WHERE ci.cartItemId IS NOT NULL), 
+               ) FILTER (WHERE ci.cart_item_id IS NOT NULL), 
                '[]'::json
             ) as items
          FROM cart c
-         LEFT JOIN cart_item ci ON c.cartId = ci.cartId
-         LEFT JOIN product p ON ci.productId = p.productId
-         GROUP BY c.cartId
-         ORDER BY c.createdAt DESC
+         LEFT JOIN cart_item ci ON c.cart_id = ci.cart_id
+         LEFT JOIN product p ON ci.product_id = p.product_id
+         GROUP BY c.cart_id
+         ORDER BY c.created_at DESC
       `);
-      res.status(200).send(result.rows);
+      res.status(200).send(convertToCamelCase(result.rows));
    } catch (error) {
       console.error('Error fetching carts:', error);
       res.status(500).send('Internal Server Error');
    }
 });
+
+// Get cart by ID with items
+router.get('/:id', async (req: Request, res: Response) => {
+   try {
+      const cartId = req.params.id;
+      let result = await pool.query(
+         `
+         SELECT
+            c.cart_id, 
+            c.user_id, 
+            c.status,
+            c.created_at,
+            c.updated_at,
+            COALESCE(
+               json_agg(
+                  json_build_object(
+                     'cartItemId', ci.cart_item_id,
+                     'productId', ci.product_id,
+                     'quantity', ci.quantity,
+                     'addedAt', ci.added_at,
+                     'productName', p.name,
+                     'productPrice', p.price
+                  )
+               ) FILTER (WHERE ci.cart_item_id IS NOT NULL), 
+               '[]'::json
+            ) as items
+         FROM cart c
+         LEFT JOIN cart_item ci ON c.cart_id = ci.cart_id
+         LEFT JOIN product p ON ci.product_id = p.product_id
+         WHERE c.cart_id = $1
+         GROUP BY c.cart_id
+      `,
+         [cartId]
+      );
+
+      if (result.rows.length === 0) {
+         return res.status(404).send('Cart not found');
+      }
+      res.status(200).send(convertToCamelCase(result.rows[0]));
+   } catch (error) {
+      console.error('Error fetching cart:', error);
+      res.status(500).send('Internal Server Error');
+   }
+});
+
 
 /**
  * @swagger
@@ -198,43 +244,43 @@ router.get('/', async (req: Request, res: Response) => {
  *               example: Internal Server Error
  */
 
-router.get('/:id', async (req: Request, res: Response) => {
+router.get('/user/:id', async (req: Request, res: Response) => {
    try {
-      const cartId = req.params.id;
+      const userId = req.params.id;
       let result = await pool.query(
          `
-         SELECT 
-            c.cartId, 
-            c.userId, 
+         SELECT
+            c.cart_id, 
+            c.user_id, 
             c.status,
-            c.createdAt,
-            c.updatedAt,
+            c.created_at,
+            c.updated_at,
             COALESCE(
                json_agg(
                   json_build_object(
-                     'cartItemId', ci.cartItemId,
-                     'productId', ci.productId,
+                     'cartItemId', ci.cart_item_id,
+                     'productId', ci.product_id,
                      'quantity', ci.quantity,
-                     'addedAt', ci.addedAt,
+                     'addedAt', ci.added_at,
                      'productName', p.name,
                      'productPrice', p.price
                   )
-               ) FILTER (WHERE ci.cartItemId IS NOT NULL), 
+               ) FILTER (WHERE ci.cart_item_id IS NOT NULL), 
                '[]'::json
             ) as items
          FROM cart c
-         LEFT JOIN cart_item ci ON c.cartId = ci.cartId
-         LEFT JOIN product p ON ci.productId = p.productId
-         WHERE c.cartId = $1
-         GROUP BY c.cartId
+         LEFT JOIN cart_item ci ON c.cart_id = ci.cart_id
+         LEFT JOIN product p ON ci.product_id = p.product_id
+         WHERE c.user_id = $1
+         GROUP BY c.cart_id
       `,
-         [cartId]
+         [userId]
       );
 
       if (result.rows.length === 0) {
          return res.status(404).send('Cart not found');
       }
-      res.status(200).send(result.rows[0]);
+      res.status(200).send(convertToCamelCase(result.rows[0]));
    } catch (error) {
       console.error('Error fetching cart:', error);
       res.status(500).send('Internal Server Error');
@@ -286,17 +332,17 @@ router.get('/:id', async (req: Request, res: Response) => {
 // Create cart
 router.post('/', async (req: Request, res: Response) => {
    try {
-      const { userId } = req.body;
-      if (!userId) {
-         return res.status(400).send('userId is required');
+      const { userId, sessionId } = req.body;
+      if (!userId && !sessionId) {
+         return res.status(400).send('userId or sessionId is required');
       }
 
       let result = await pool.query(
-         'INSERT INTO cart (userId, status) VALUES ($1, $2) RETURNING *',
-         [userId, 'active']
+         'INSERT INTO cart (user_id, session_id, status) VALUES ($1, $2, $3) RETURNING *',
+         [userId, sessionId, 'active']
       );
 
-      res.status(201).send(result.rows[0]);
+      res.status(201).send(convertToCamelCase(result.rows[0]));
    } catch (error) {
       console.error('Error creating cart:', error);
       res.status(500).send('Internal Server Error');
@@ -366,7 +412,7 @@ router.put('/:id', async (req: Request, res: Response) => {
       try {
          // Validate that cart exists
          if (cartId) {
-            let cartResult = await pool.query('SELECT * FROM cart WHERE cartId = $1', [cartId]);
+            let cartResult = await pool.query('SELECT * FROM cart WHERE cart_id = $1', [cartId]);
             if (cartResult.rows.length === 0) {
                await pool.query('ROLLBACK');
                return res.status(404).send('Cart not found');
@@ -402,13 +448,13 @@ router.put('/:id', async (req: Request, res: Response) => {
             if (existingItem.rows.length > 0) {
                // Update existing item
                await pool.query(
-                  'UPDATE cart_items SET quantity = $1 WHERE cartId = $2 AND productId = $3',
+                  'UPDATE cart_items SET quantity = $1 WHERE cart_id = $2 AND product_id = $3',
                   [quantity, cartId, productId]
                );
             } else {
                // Add new item
                await pool.query(
-                  'INSERT INTO cart_item (cartId, productId, quantity) VALUES ($1, $2, $3)',
+                  'INSERT INTO cart_item (cart_id, product_id, quantity) VALUES ($1, $2, $3)',
                   [cartId, productId, quantity]
                );
             }
@@ -417,7 +463,7 @@ router.put('/:id', async (req: Request, res: Response) => {
          // Update cart status provided
          if (status) {
             await pool.query(
-               `UPDATE cart SET status = $1, updatedAt = CURRENT_TIMESTAMP WHERE cartId = $2`,
+               `UPDATE cart SET status = $1, updated_at = CURRENT_TIMESTAMP WHERE cart_id = $2`,
                [status, cartId]
             );
          }
@@ -429,34 +475,34 @@ router.put('/:id', async (req: Request, res: Response) => {
          let result = await pool.query(
             `
             SELECT 
-               c.cartId, 
-               c.userId, 
+               c.cart_id,
+               c.user_id, 
                c.status,
-               c.createdAt,
-               c.updatedAt,
+               c.created_at,
+               c.updated_at,
                COALESCE(
                   json_agg(
                      json_build_object(
-                        'cartItemId', ci.cartItemId,
-                        'productId', ci.productId,
+                        'cartItemId', ci.cart_item_id,
+                        'productId', ci.product_id,
                         'quantity', ci.quantity,
-                        'addedAt', ci.addedAt,
+                        'addedAt', ci.added_at,
                         'productName', p.name,
                         'productPrice', p.price
                      )
-                  ) FILTER (WHERE ci.cartItemId IS NOT NULL), 
+                  ) FILTER (WHERE ci.cart_item_id IS NOT NULL), 
                   '[]'::json
                ) as items
             FROM cart c
-            LEFT JOIN cart_item ci ON c.cartId = ci.cartId
-            LEFT JOIN product p ON ci.productId = p.productId
-            WHERE c.cartId = $1
-            GROUP BY c.cartId
+            LEFT JOIN cart_item ci ON c.cart_id = ci.cart_id
+            LEFT JOIN product p ON ci.product_id = p.product_id
+            WHERE c.cart_id = $1
+            GROUP BY c.cart_id
          `,
             [cartId]
          );
 
-         res.status(200).send(result.rows[0]);
+         res.status(200).send(convertToCamelCase(result.rows[0]));
       } catch (error) {
          await pool.query('ROLLBACK');
          throw error;
@@ -467,15 +513,71 @@ router.put('/:id', async (req: Request, res: Response) => {
    }
 });
 
+// Merge guest cart with user cart
+router.post('/merge/:userId', async (req: Request, res: Response) => {
+   try {
+      const userId = req.params.userId;
+      const { sessionId } = req.body;
+
+      if (!sessionId) {
+         return res.status(400).send('sessionId is required');
+      }
+
+      // Find guest cart by sessionId
+      let guestCartResult = await pool.query(
+         'SELECT * FROM cart WHERE session_id = $1 AND user_id IS NULL',
+         [sessionId]
+      );
+
+      if (guestCartResult.rows.length === 0) {
+         return res.status(404).send('Guest cart not found');
+      }
+
+      const guestCart = guestCartResult.rows[0];
+
+      // Check if user already has a cart
+      let userCartResult = await pool.query(
+         'SELECT * FROM cart WHERE user_id = $1',
+         [userId]
+      );
+
+      let userCart;
+      if (userCartResult.rows.length > 0) {
+         userCart = userCartResult.rows[0];
+      } else {
+         // Create new cart for user if it doesn't exist
+         let newCartResult = await pool.query(
+            'INSERT INTO cart (user_id, status) VALUES ($1, $2) RETURNING *',
+            [userId, 'active']
+         );
+         userCart = newCartResult.rows[0];
+      }
+
+      // Move items from guest cart to user's cart
+      await pool.query(
+         'UPDATE cart_item SET cart_id = $1 WHERE cart_id = $2',
+         [userCart.cart_id, guestCart.cart_id]
+      );
+
+      // Delete the guest cart
+      await pool.query('DELETE FROM cart WHERE cart_id = $1', [guestCart.cart_id]);
+
+      res.status(200).send(convertToCamelCase(userCart));
+   } catch (error) {
+      console.error('Error merging carts:', error);
+      res.status(500).send('Internal Server Error');
+   }
+});
+
 // Delete cart
 router.delete('/:id', async (req: Request, res: Response) => {
    try {
       const cartId = req.params.id;
-      let result = await pool.query('DELETE FROM cart WHERE cartId = $1 RETURNING *', [cartId]);
+      let result = await pool.query('DELETE FROM cart WHERE cart_id = $1 RETURNING *', [cartId]);
       if (result.rows.length === 0) {
          return res.status(404).send('Cart not found');
       }
-      res.status(200).send(result.rows[0]);
+      res.status(200).send(convertToCamelCase(result.rows[0]));
    } catch (error) {
       console.error('Error deleting cart:', error);
       res.status(500).send('Internal Server Error');
@@ -488,7 +590,7 @@ router.delete('/:cartId/items/:itemId', async (req: Request, res: Response) => {
       const { cartId, itemId } = req.params;
 
       let result = await pool.query(
-         'DELETE FROM cart_item WHERE cartId = $1 AND cartItemId = $2 RETURNING *',
+         'DELETE FROM cart_item WHERE cartId = $1 AND cart_item_id = $2 RETURNING *',
          [cartId, itemId]
       );
 
@@ -496,7 +598,7 @@ router.delete('/:cartId/items/:itemId', async (req: Request, res: Response) => {
          return res.status(404).send('Cart item not found');
       }
 
-      res.status(200).send({ message: 'Item removed from cart', item: result.rows[0] });
+      res.status(200).send({ message: 'Item removed from cart', item: convertToCamelCase(result.rows[0]) });
    } catch (error) {
       console.error('Error removing item from cart:', error);
       res.status(500).send('Internal Server Error');
@@ -511,7 +613,7 @@ router.post('/:id/items', async (req: Request, res: Response) => {
 
       // Validate product and stock
       let productResult = await pool.query(
-         'SELECT stock, price FROM product WHERE productId = $1',
+         'SELECT stock, price FROM product WHERE product_id = $1',
          [productId]
       );
       if (productResult.rows.length === 0) {
@@ -525,7 +627,7 @@ router.post('/:id/items', async (req: Request, res: Response) => {
 
       // Check if item already exists in cart
       let existingItem = await pool.query(
-         'SELECT * FROM cart_item WHERE cartId = $1 AND productId = $2',
+         'SELECT * FROM cart_item WHERE cart_id = $1 AND product_id = $2',
          [cartId, productId]
       );
 
@@ -533,18 +635,18 @@ router.post('/:id/items', async (req: Request, res: Response) => {
       if (existingItem.rows.length > 0) {
          // Update existing item
          result = await pool.query(
-            'UPDATE cart_item SET quantity = quantity + $1 WHERE cartId = $2 AND productId = $3 RETURNING *',
+            'UPDATE cart_item SET quantity = quantity + $1 WHERE cart_id = $2 AND product_id = $3 RETURNING *',
             [quantity, cartId, productId]
          );
       } else {
          // Add new item
          result = await pool.query(
-            'INSERT INTO cart_item (cartId, productId, quantity) VALUES ($1, $2, $3) RETURNING *',
+            'INSERT INTO cart_item (cart_id, product_id, quantity) VALUES ($1, $2, $3) RETURNING *',
             [cartId, productId, quantity]
          );
       }
 
-      res.status(201).send(result.rows[0]);
+      res.status(201).send(convertToCamelCase(result.rows[0]));
    } catch (error) {
       console.error('Error adding item to cart:', error);
       res.status(500).send('Internal Server Error');

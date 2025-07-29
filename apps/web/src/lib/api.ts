@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 // Define types locally for now
 export interface User {
@@ -38,6 +38,22 @@ export interface Category {
    updatedAt: Date;
 }
 
+export interface Cart {
+   cartId: string;
+   userId?: string; // Optional for guest carts
+   sessionId?: string; // For guest sessions
+   createdAt: Date;
+   updatedAt: Date;
+}
+
+export interface CartItem {
+   cartItemId: string;
+   cartId: string;
+   productId: string;
+   quantity: number;
+   addedAt: Date;
+}
+
 export interface LoginRequest {
    username: string;
    password: string;
@@ -49,6 +65,36 @@ export interface LoginResponse {
 }
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+// Session management helpers
+const SESSION_CART_KEY = 'guest_cart_id';
+
+function getOrCreateSessionId(): string {
+   if (typeof window === 'undefined') return '';
+
+   let sessionId = localStorage.getItem('session_id');
+   if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('session_id', sessionId);
+   }
+   return sessionId;
+}
+
+function getGuestCartId(): string | null {
+   if (typeof window === 'undefined') return null;
+   return localStorage.getItem(SESSION_CART_KEY);
+}
+
+function setGuestCartId(cartId: string): void {
+   if (typeof window === 'undefined') return;
+   localStorage.setItem(SESSION_CART_KEY, cartId);
+}
+
+function clearGuestCart(): void {
+   if (typeof window === 'undefined') return;
+   localStorage.removeItem(SESSION_CART_KEY);
+   localStorage.removeItem('session_id');
+}
 
 // Generic API client
 class ApiClient {
@@ -95,19 +141,18 @@ class ApiClient {
       });
    }
 
-   async getProfile(): Promise<{ user: User }> {
-      return this.request<{ user: User }>('/api/profile');
-   }
-
    // User endpoints
    async getUsers(): Promise<User[]> {
       return this.request<User[]>('/api/users');
    }
 
-   async getUserById(userId: string): Promise<User> {
-      return this.request<User>(`/api/users/${userId}`);
+   async getUserById(userId: string): Promise<User | null> {
+      return userId ? this.request<User>(`/api/users/${userId}`) : null;
    }
 
+   async getUserProfile(): Promise<User | null> {
+      return this.request<User>('/api/users/profile');
+   }
    async createUser(userData: Omit<User, 'userId' | 'createdAt' | 'updatedAt'>): Promise<User> {
       return this.request<User>('/api/users', {
          method: 'POST',
@@ -141,71 +186,73 @@ class ApiClient {
    async getCategoryById(categoryId: string): Promise<Category> {
       return this.request<Category>(`/api/categories/${categoryId}`);
    }
+
+   async createCart(userId?: string): Promise<Cart> {
+      const body = userId ? { userId } : { sessionId: getOrCreateSessionId() };
+
+      return this.request<Cart>(`/api/carts`, {
+         method: 'POST',
+         body: JSON.stringify(body)
+      });
+   }
+
+   async getUserCart(userId?: string): Promise<Cart | null> {
+      if (userId) {
+         console.log('Fetching cart for user:', userId);
+         return this.request<Cart>(`/api/carts/user/${userId}`);
+      } else {
+         // Check for guest cart
+         const guestCartId = getGuestCartId();
+         if (guestCartId) {
+            console.log('Fetching guest cart:', guestCartId);
+            return this.request<Cart>(`/api/carts/${guestCartId}`);
+         }
+         return null;
+      }
+   }
+
+   async addToCart(productId: string, quantity: number, userId?: string): Promise<CartItem> {
+      let cart = await this.getUserCart(userId);
+
+      if (!cart) {
+         cart = await this.createCart(userId);
+         if (!userId) {
+            // Store guest cart ID
+            setGuestCartId(cart.cartId);
+         }
+      }
+
+      console.log('Adding item to cart:', cart.cartId, { productId, quantity });
+      return this.request<CartItem>(`/api/carts/${cart.cartId}/items`, {
+         method: 'POST',
+         body: JSON.stringify({ productId, quantity })
+      });
+   }
+
+   async mergeGuestCartWithUser(userId: string): Promise<Cart> {
+      const guestCartId = getGuestCartId();
+      if (!guestCartId) {
+         // No guest cart to merge, just create new user cart
+         return this.createCart(userId);
+      }
+
+      console.log('Merging guest cart with user:', guestCartId, userId);
+      const mergedCart = await this.request<Cart>(`/api/carts/merge`, {
+         method: 'POST',
+         body: JSON.stringify({
+            guestCartId,
+            userId
+         })
+      });
+
+      // Clear guest cart data
+      clearGuestCart();
+      return mergedCart;
+   }
 }
 
 // Create singleton instance
 export const apiClient = new ApiClient(API_BASE_URL);
-
-// React hooks
-export const useAuth = () => {
-   const [user, setUser] = useState<User | null>(null);
-   const [loading, setLoading] = useState(true);
-   const [error, setError] = useState<string | null>(null);
-
-   useEffect(() => {
-      checkAuth();
-   }, []);
-
-   const checkAuth = async () => {
-      try {
-         setLoading(true);
-         const response = await apiClient.getProfile();
-         setUser(response.user);
-         setError(null);
-      } catch (err) {
-         setUser(null);
-         setError(err instanceof Error ? err.message : 'Authentication failed');
-      } finally {
-         setLoading(false);
-      }
-   };
-
-   const login = async (credentials: LoginRequest) => {
-      try {
-         setLoading(true);
-         const response = await apiClient.login(credentials);
-         setUser(response.user);
-         setError(null);
-         return true;
-      } catch (err) {
-         setError(err instanceof Error ? err.message : 'Login failed');
-         return false;
-      } finally {
-         setLoading(false);
-      }
-   };
-
-   const logout = async () => {
-      try {
-         await apiClient.logout();
-         setUser(null);
-         setError(null);
-      } catch (err) {
-         setError(err instanceof Error ? err.message : 'Logout failed');
-      }
-   };
-
-   return {
-      user,
-      userId: user?.userId,
-      loading,
-      error,
-      login,
-      logout,
-      checkAuth,
-      isAuthenticated: !!user
-   };
-};
 
 export const useUsers = () => {
    const [users, setUsers] = useState<User[]>([]);
@@ -280,4 +327,83 @@ export const useCategories = () => {
    }, []);
 
    return { categories, loading, error, refetch: fetchCategories };
+};
+
+export const useCart = (userId?: string) => {
+   const [cart, setCart] = useState<Cart | null>(null);
+   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+   const [loading, setLoading] = useState(false);
+   const [error, setError] = useState<string | null>(null);
+
+   const fetchCart = useCallback(async () => {
+      try {
+         setLoading(true);
+         const cartData = await apiClient.getUserCart(userId);
+         setCart(cartData);
+
+         if (cartData) {
+            // Fetch cart items - you'll need to implement this endpoint
+            // const items = await apiClient.getCartItems(cartData.cartId);
+            // setCartItems(items);
+            setCartItems([]); // Placeholder until endpoint is implemented
+         }
+
+         setError(null);
+      } catch (err) {
+         setError(err instanceof Error ? err.message : 'Failed to fetch cart');
+      } finally {
+         setLoading(false);
+      }
+   }, [userId]);
+
+   const addToCart = async (productId: string, quantity: number = 1) => {
+      try {
+         setLoading(true);
+         const cartItem = await apiClient.addToCart(productId, quantity, userId);
+
+         // Refresh cart after adding item
+         await fetchCart();
+
+         setError(null);
+         return cartItem;
+      } catch (err) {
+         setError(err instanceof Error ? err.message : 'Failed to add item to cart');
+         throw err;
+      } finally {
+         setLoading(false);
+      }
+   };
+
+   const mergeGuestCart = async (newUserId: string) => {
+      try {
+         setLoading(true);
+         const mergedCart = await apiClient.mergeGuestCartWithUser(newUserId);
+         setCart(mergedCart);
+
+         // Refresh cart items
+         await fetchCart();
+
+         setError(null);
+         return mergedCart;
+      } catch (err) {
+         setError(err instanceof Error ? err.message : 'Failed to merge cart');
+         throw err;
+      } finally {
+         setLoading(false);
+      }
+   };
+
+   useEffect(() => {
+      fetchCart();
+   }, [fetchCart]);
+
+   return {
+      cart,
+      cartItems,
+      loading,
+      error,
+      addToCart,
+      mergeGuestCart,
+      refetch: fetchCart
+   };
 };

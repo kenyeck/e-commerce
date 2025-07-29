@@ -19,7 +19,7 @@ export function Home() {
             Explore our wide range of products and enjoy a seamless shopping experience.
          </p>
          <div className="flex flex-col sm:flex-row gap-4">
-            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer">
+            <button className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition cursor-pointer" onClick={() => window.location.href = '/products'  }>
                Shop Now
             </button>
             <button className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition cursor-pointer">

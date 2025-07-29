@@ -4,6 +4,7 @@ import './globals.css';
 import { AuthProvider } from '../contexts/AuthContext';
 import { Nav } from '@/components/Nav';
 import { CommonLinks } from '@/components/CommonLinks';
+import Link from 'next/link';
 
 const geistSans = Geist({
    variable: '--font-geist-sans',
@@ -83,8 +84,24 @@ export default function RootLayout({
                   <footer
                      style={{ textAlign: 'center', paddingLeft: '50px', paddingRight: '50px' }}
                   >
-                     <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '12px' }}>
+                     <div
+                        style={{
+                           display: 'flex',
+                           justifyContent: 'center',
+                           alignItems: 'center',
+                           gap: '20px'
+                        }}
+                     >
                         <CommonLinks />
+                        <Link href="/about" className="text-blue-300 hover:underline">
+                           About Us
+                        </Link>
+                        <Link href="/contact" className="text-blue-300 hover:underline">
+                           Contact
+                        </Link>
+                        <Link href="/privacy" className="text-blue-300 hover:underline">
+                           Privacy Policy
+                        </Link>
                      </div>
                      <div style={{ padding: '20px' }}>
                         {`© ${new Date().getFullYear()} E-commerce Platform. All rights reserved.`}

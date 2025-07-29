@@ -2,6 +2,7 @@ import express, { Router, Request, Response } from 'express';
 import bcrypt from 'bcrypt';
 import { pool } from '..';
 import { convertToCamelCase } from '../utils/convertToCamelCase';
+import { ensureAuthenticated } from '../utils/ensureAuthenticated';
 
 const router: Router = express.Router();
 
@@ -147,6 +148,16 @@ router.get('/', async (req: Request, res: Response) => {
    }
 });
 
+// Get User Profile
+router.get('/profile', ensureAuthenticated, async (req: Request, res: Response) => {
+   if (req.user) {
+      const { passwordhash, ...userWithoutPassword } = req.user as any;
+      res.status(200).json({ user: convertToCamelCase(userWithoutPassword) });
+   } else {
+      res.status(401).json({ error: 'User not authenticated' });
+   }
+});
+
 /**
  * @swagger
  * /api/users/{id}:
@@ -184,7 +195,7 @@ router.get('/', async (req: Request, res: Response) => {
  *               type: string
  *               example: Internal Server Error
  */
-router.get('/profile', async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
    try {
       const userId = req.params.id;
       let result = await pool.query(
@@ -205,6 +216,99 @@ router.get('/profile', async (req: Request, res: Response) => {
    } catch (error) {
       console.error('Error fetching user:', error);
       res.status(500).send('Internal Server Error');
+   }
+});
+
+/**
+ * @swagger
+ * /api/users/:
+ *   post:
+ *     summary: Create a new user
+ *     description: Create a new user account with username, email, and password
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/UserRegistration'
+ *           examples:
+ *             user_registration:
+ *               summary: Example user registration
+ *               value:
+ *                 username: "johndoe"
+ *                 email: "john.doe@example.com"
+ *                 password: "securepassword123"
+ *                 firstName: "John"
+ *                 lastName: "Doe"
+ *                 phone: "+1234567890"
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Bad request - missing required fields or user already exists
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               examples:
+ *                 missing_fields:
+ *                   summary: Missing required fields
+ *                   value: "username, password, and email are required"
+ *                 user_exists:
+ *                   summary: User already exists
+ *                   value: "User already exists"
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           text/plain:
+ *             schema:
+ *               type: string
+ *               example: Internal Server Error
+ */
+router.post('/', async (req: Request, res: Response) => {
+   try {
+      const { username, password, email, firstName, lastName, phone } = req.body;
+
+      if (!username || !password || !email) {
+         return res.status(400).send('username, password, and email are required');
+      }
+
+      // Check if user already exists by username or email
+      let existingUser = await pool.query(
+         'SELECT user_id FROM "user" WHERE username = $1 OR email = $2',
+         [username, email]
+      );
+
+      if (existingUser.rows.length > 0) {
+         return res.status(400).send('User with this username or email already exists');
+      }
+
+      const saltRounds = 10;
+      const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+      let result = await pool.query(
+         `INSERT INTO "user" (username, password_hash, email, first_name, last_name, phone) 
+          VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
+         [username, hashedPassword, email, firstName, lastName, phone]
+      );
+
+      // Remove password hash from response and convert to camelCase
+      const { passwordHash, ...userWithoutPassword } = convertToCamelCase(result.rows[0]);
+
+      res.status(201).send(userWithoutPassword);
+   } catch (error: any) {
+      console.error('Error registering user:', error);
+      if (error.code === '23505') {
+         // Unique constraint violation
+         res.status(400).send('Username or email already exists');
+      } else {
+         res.status(500).send('Internal Server Error');
+      }
    }
 });
 
@@ -374,99 +478,6 @@ router.delete('/:id', async (req: Request, res: Response) => {
    } catch (error) {
       console.error('Error deleting user:', error);
       res.status(500).send('Internal Server Error');
-   }
-});
-
-/**
- * @swagger
- * /api/users/:
- *   post:
- *     summary: Create a new user
- *     description: Create a new user account with username, email, and password
- *     tags: [Users]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/UserRegistration'
- *           examples:
- *             user_registration:
- *               summary: Example user registration
- *               value:
- *                 username: "johndoe"
- *                 email: "john.doe@example.com"
- *                 password: "securepassword123"
- *                 firstName: "John"
- *                 lastName: "Doe"
- *                 phone: "+1234567890"
- *     responses:
- *       201:
- *         description: User created successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/User'
- *       400:
- *         description: Bad request - missing required fields or user already exists
- *         content:
- *           text/plain:
- *             schema:
- *               type: string
- *               examples:
- *                 missing_fields:
- *                   summary: Missing required fields
- *                   value: "username, password, and email are required"
- *                 user_exists:
- *                   summary: User already exists
- *                   value: "User already exists"
- *       500:
- *         description: Internal server error
- *         content:
- *           text/plain:
- *             schema:
- *               type: string
- *               example: Internal Server Error
- */
-router.post('/', async (req: Request, res: Response) => {
-   try {
-      const { username, password, email, firstName, lastName, phone } = req.body;
-
-      if (!username || !password || !email) {
-         return res.status(400).send('username, password, and email are required');
-      }
-
-      // Check if user already exists by username or email
-      let existingUser = await pool.query(
-         'SELECT user_id FROM "user" WHERE username = $1 OR email = $2',
-         [username, email]
-      );
-
-      if (existingUser.rows.length > 0) {
-         return res.status(400).send('User with this username or email already exists');
-      }
-
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-      let result = await pool.query(
-         `INSERT INTO "user" (username, password_hash, email, first_name, last_name, phone) 
-          VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
-         [username, hashedPassword, email, firstName, lastName, phone]
-      );
-
-      // Remove password hash from response and convert to camelCase
-      const { passwordHash, ...userWithoutPassword } = convertToCamelCase(result.rows[0]);
-
-      res.status(201).send(userWithoutPassword);
-   } catch (error: any) {
-      console.error('Error registering user:', error);
-      if (error.code === '23505') {
-         // Unique constraint violation
-         res.status(400).send('Username or email already exists');
-      } else {
-         res.status(500).send('Internal Server Error');
-      }
    }
 });
 
