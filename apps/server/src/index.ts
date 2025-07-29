@@ -102,12 +102,12 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 passport.serializeUser(function (user: any, done) {
-   console.log('Serializing user:', convertToCamelCase(user).userId);
+   //console.log('Serializing user:', convertToCamelCase(user).userId);
    done(null, convertToCamelCase(user).userId);
 });
 
 passport.deserializeUser(function (id: string, done) {
-   console.log('Deserializing user with ID:', id);
+   //console.log('Deserializing user with ID:', id);
    pool.query('SELECT * FROM "user" WHERE user_id = $1', [id], (err, result) => {
       if (err) {
          console.error('Error deserializing user:', err);
@@ -117,7 +117,7 @@ passport.deserializeUser(function (id: string, done) {
          console.error('User not found during deserialization:', id);
          return done(null, false);
       }
-      console.log('User deserialized successfully');
+      //console.log('User deserialized successfully');
       done(null, convertToCamelCase(result.rows[0]));
    });
 });
@@ -140,12 +140,12 @@ passport.use(
          }
 
          const user = convertToCamelCase(result.rows[0]);
-         console.log('User found:', user.username);
-         console.log('User passwordHash exists:', user.passwordHash ? 'Yes' : 'No');
-         console.log(
-            'PasswordHash length:',
-            user.passwordHash ? user.passwordHash.length : 'undefined'
-         );
+         //console.log('User found:', user.username);
+         //console.log('User passwordHash exists:', user.passwordHash ? 'Yes' : 'No');
+         // console.log(
+         //    'PasswordHash length:',
+         //    user.passwordHash ? user.passwordHash.length : 'undefined'
+         // );
 
          // Check if passwordHash exists
          if (!user.passwordHash) {
@@ -159,7 +159,7 @@ passport.use(
             console.log('Password mismatch for user:', username);
             return done(null, false, { message: 'Incorrect password.' });
          }
-         console.log('Login successful for user:', convertToCamelCase(user));
+         //console.log('Login successful for user:', convertToCamelCase(user));
          return done(null, user);
       } catch (error) {
          console.error('Login error:', error);

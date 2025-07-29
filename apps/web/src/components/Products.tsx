@@ -1,14 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { apiClient, Product, useProducts, CartItem } from '@/lib/api';
+import { apiClient, Product, useProducts } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 
 export function Products() {
    const { products, loading } = useProducts();
 
    if (loading) {
-      return <div>Loading...</div>;
+      return <div style={{ fontSize: '2em' }}>Loading...</div>;
    }
 
    return (

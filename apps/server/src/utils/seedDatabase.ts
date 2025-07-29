@@ -31,8 +31,8 @@ export async function seedDatabase() {
       const userIds = await seedUsers(client);
       const categoryIds = await seedCategories(client);
       const productIds = await seedProducts(client, categoryIds);
-      const cartIds = await seedCarts(client, userIds);
-      await seedCartItems(client, cartIds, productIds);
+      //const cartIds = await seedCarts(client, userIds);
+      //await seedCartItems(client, cartIds, productIds);
       const orderIds = await seedOrders(client, userIds);
       await seedOrderItems(client, orderIds, productIds);
 

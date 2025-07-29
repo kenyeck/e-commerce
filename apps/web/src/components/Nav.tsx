@@ -51,7 +51,7 @@ export function Nav() {
          }}
       >
          <Link
-            href="https://localhost:3000"
+            href="/"
             style={{
                textDecoration: 'none',
                color: 'inherit',

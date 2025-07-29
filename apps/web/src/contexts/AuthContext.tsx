@@ -9,7 +9,7 @@ interface AuthContextType {
   userId: string | undefined;
   loading: boolean;
   error: string | null;
-  login: (credentials: LoginRequest) => Promise<boolean>;
+  login: (credentials: LoginRequest) => Promise<string | null>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   isAuthenticated: boolean;
@@ -42,10 +42,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const response = await apiClient.login(credentials);
       setUser(response.user);
       setError(null);
-      return true;
+      return response.user.userId;
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
-      return false;
+      return null;
     } finally {
       setLoading(false);
     }
