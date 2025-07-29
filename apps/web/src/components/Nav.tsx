@@ -4,10 +4,12 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { FaShoppingCart, FaUser } from 'react-icons/fa';
 import { useAuth } from '@/contexts/AuthContext';
+import { useCart } from '@/contexts/CartContext';
 import { CommonLinks } from './CommonLinks';
 
 export function Nav() {
    const { isAuthenticated, logout } = useAuth();
+   const { cartItemCount } = useCart();
    const [isDropdownOpen, setIsDropdownOpen] = useState(false);
    const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -182,8 +184,34 @@ export function Nav() {
                   </div>
                )}
             </div>
-            <Link href="/cart" className="text-blue-300 hover:underline">
+            <Link
+               href="/cart"
+               className="text-blue-300 hover:underline"
+               style={{ position: 'relative', display: 'inline-block' }}
+            >
                <FaShoppingCart />
+               {cartItemCount > 0 && (
+                  <span
+                     style={{
+                        position: 'absolute',
+                        top: '-8px',
+                        right: '-8px',
+                        backgroundColor: '#ef4444',
+                        color: 'white',
+                        borderRadius: '50%',
+                        width: '18px',
+                        height: '18px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '10px',
+                        fontWeight: 'bold',
+                        minWidth: '18px'
+                     }}
+                  >
+                     {cartItemCount > 99 ? '99+' : cartItemCount}
+                  </span>
+               )}
             </Link>
          </div>
       </nav>

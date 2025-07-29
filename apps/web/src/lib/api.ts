@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
 // Define types locally for now
 export interface User {
@@ -44,6 +44,7 @@ export interface Cart {
    sessionId?: string; // For guest sessions
    createdAt: Date;
    updatedAt: Date;
+   items?: CartItem[];
 }
 
 export interface CartItem {
@@ -52,6 +53,10 @@ export interface CartItem {
    productId: string;
    quantity: number;
    addedAt: Date;
+   productName: string;
+   productDescription?: string;
+   unitPrice: number;
+   imageUrl: string;
 }
 
 export interface LoginRequest {
@@ -212,7 +217,21 @@ class ApiClient {
    }
 
    async addToCart(productId: string, quantity: number, userId?: string): Promise<CartItem> {
-      let cart = await this.getUserCart(userId);
+      const cart = await this.getUserCartOrCreate(userId);
+      console.log('Adding item to cart:', cart.cartId, { productId, quantity });
+      return this.request<CartItem>(`/api/carts/${cart.cartId}/items`, {
+         method: 'POST',
+         body: JSON.stringify({ productId, quantity })
+      });
+   }
+
+   async getUserCartOrCreate(userId?: string): Promise<Cart> {
+      let cart = null;
+      try {
+         cart = await this.getUserCart(userId);
+      } catch (err) {
+         console.error('Error fetching user cart:', err);
+      }
 
       if (!cart) {
          cart = await this.createCart(userId);
@@ -221,11 +240,13 @@ class ApiClient {
             setGuestCartId(cart.cartId);
          }
       }
+      return cart;
+   }
 
-      console.log('Adding item to cart:', cart.cartId, { productId, quantity });
-      return this.request<CartItem>(`/api/carts/${cart.cartId}/items`, {
-         method: 'POST',
-         body: JSON.stringify({ productId, quantity })
+   async removeFromCart(cartItemId: string, userId?: string): Promise<void> {
+      const cart = await this.getUserCartOrCreate(userId);
+      return this.request<void>(`/api/carts/${cart.cartId}/items/${cartItemId}`, {
+         method: 'DELETE'
       });
    }
 
@@ -236,13 +257,10 @@ class ApiClient {
          return this.createCart(userId);
       }
 
-      console.log('Merging guest cart with user:', guestCartId, userId);
-      const mergedCart = await this.request<Cart>(`/api/carts/merge`, {
+      console.log('Merging guest cart with user:', userId, 'guestCartId:', guestCartId);
+      const mergedCart = await this.request<Cart>(`/api/carts/merge/${userId}`, {
          method: 'POST',
-         body: JSON.stringify({
-            guestCartId,
-            userId
-         })
+         body: JSON.stringify({ guestCartId })
       });
 
       // Clear guest cart data
@@ -327,83 +345,4 @@ export const useCategories = () => {
    }, []);
 
    return { categories, loading, error, refetch: fetchCategories };
-};
-
-export const useCart = (userId?: string) => {
-   const [cart, setCart] = useState<Cart | null>(null);
-   const [cartItems, setCartItems] = useState<CartItem[]>([]);
-   const [loading, setLoading] = useState(false);
-   const [error, setError] = useState<string | null>(null);
-
-   const fetchCart = useCallback(async () => {
-      try {
-         setLoading(true);
-         const cartData = await apiClient.getUserCart(userId);
-         setCart(cartData);
-
-         if (cartData) {
-            // Fetch cart items - you'll need to implement this endpoint
-            // const items = await apiClient.getCartItems(cartData.cartId);
-            // setCartItems(items);
-            setCartItems([]); // Placeholder until endpoint is implemented
-         }
-
-         setError(null);
-      } catch (err) {
-         setError(err instanceof Error ? err.message : 'Failed to fetch cart');
-      } finally {
-         setLoading(false);
-      }
-   }, [userId]);
-
-   const addToCart = async (productId: string, quantity: number = 1) => {
-      try {
-         setLoading(true);
-         const cartItem = await apiClient.addToCart(productId, quantity, userId);
-
-         // Refresh cart after adding item
-         await fetchCart();
-
-         setError(null);
-         return cartItem;
-      } catch (err) {
-         setError(err instanceof Error ? err.message : 'Failed to add item to cart');
-         throw err;
-      } finally {
-         setLoading(false);
-      }
-   };
-
-   const mergeGuestCart = async (newUserId: string) => {
-      try {
-         setLoading(true);
-         const mergedCart = await apiClient.mergeGuestCartWithUser(newUserId);
-         setCart(mergedCart);
-
-         // Refresh cart items
-         await fetchCart();
-
-         setError(null);
-         return mergedCart;
-      } catch (err) {
-         setError(err instanceof Error ? err.message : 'Failed to merge cart');
-         throw err;
-      } finally {
-         setLoading(false);
-      }
-   };
-
-   useEffect(() => {
-      fetchCart();
-   }, [fetchCart]);
-
-   return {
-      cart,
-      cartItems,
-      loading,
-      error,
-      addToCart,
-      mergeGuestCart,
-      refetch: fetchCart
-   };
 };

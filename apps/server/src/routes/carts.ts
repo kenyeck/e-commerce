@@ -132,6 +132,7 @@ router.get('/', async (req: Request, res: Response) => {
          SELECT 
             c.cart_id, 
             c.user_id, 
+            c.session_id,
             c.status,
             c.created_at,
             c.updated_at,
@@ -143,7 +144,8 @@ router.get('/', async (req: Request, res: Response) => {
                      'quantity', ci.quantity,
                      'addedAt', ci.added_at,
                      'productName', p.name,
-                     'productPrice', p.price
+                     'unitPrice', p.price,
+                     'imageUrl', p.image_url
                   )
                ) FILTER (WHERE ci.cart_item_id IS NOT NULL), 
                '[]'::json
@@ -170,6 +172,7 @@ router.get('/:id', async (req: Request, res: Response) => {
          SELECT
             c.cart_id, 
             c.user_id, 
+            c.session_id,
             c.status,
             c.created_at,
             c.updated_at,
@@ -181,7 +184,8 @@ router.get('/:id', async (req: Request, res: Response) => {
                      'quantity', ci.quantity,
                      'addedAt', ci.added_at,
                      'productName', p.name,
-                     'productPrice', p.price
+                     'unitPrice', p.price,
+                     'imageUrl', p.image_url
                   )
                ) FILTER (WHERE ci.cart_item_id IS NOT NULL), 
                '[]'::json
@@ -204,7 +208,6 @@ router.get('/:id', async (req: Request, res: Response) => {
       res.status(500).send('Internal Server Error');
    }
 });
-
 
 /**
  * @swagger
@@ -252,6 +255,7 @@ router.get('/user/:id', async (req: Request, res: Response) => {
          SELECT
             c.cart_id, 
             c.user_id, 
+            c.session_id,
             c.status,
             c.created_at,
             c.updated_at,
@@ -263,7 +267,8 @@ router.get('/user/:id', async (req: Request, res: Response) => {
                      'quantity', ci.quantity,
                      'addedAt', ci.added_at,
                      'productName', p.name,
-                     'productPrice', p.price
+                     'unitPrice', p.price,
+                     'imageUrl', p.image_url
                   )
                ) FILTER (WHERE ci.cart_item_id IS NOT NULL), 
                '[]'::json
@@ -517,16 +522,16 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.post('/merge/:userId', async (req: Request, res: Response) => {
    try {
       const userId = req.params.userId;
-      const { sessionId } = req.body;
+      const { guestCartId } = req.body;
 
-      if (!sessionId) {
-         return res.status(400).send('sessionId is required');
+      if (!guestCartId) {
+         return res.status(400).send('guestCartId is required');
       }
 
-      // Find guest cart by sessionId
+      // Find guest cart
       let guestCartResult = await pool.query(
-         'SELECT * FROM cart WHERE session_id = $1 AND user_id IS NULL',
-         [sessionId]
+         'SELECT * FROM cart WHERE cart_id = $1 AND user_id IS NULL',
+         [guestCartId]
       );
 
       if (guestCartResult.rows.length === 0) {
@@ -536,10 +541,7 @@ router.post('/merge/:userId', async (req: Request, res: Response) => {
       const guestCart = guestCartResult.rows[0];
 
       // Check if user already has a cart
-      let userCartResult = await pool.query(
-         'SELECT * FROM cart WHERE user_id = $1',
-         [userId]
-      );
+      let userCartResult = await pool.query('SELECT * FROM cart WHERE user_id = $1', [userId]);
 
       let userCart;
       if (userCartResult.rows.length > 0) {
@@ -553,11 +555,14 @@ router.post('/merge/:userId', async (req: Request, res: Response) => {
          userCart = newCartResult.rows[0];
       }
 
+      console.log(`Merging guest cart ${JSON.stringify(guestCart)}`);
+      console.log(`...into user cart ${JSON.stringify(userCart)}`);
+
       // Move items from guest cart to user's cart
-      await pool.query(
-         'UPDATE cart_item SET cart_id = $1 WHERE cart_id = $2',
-         [userCart.cart_id, guestCart.cart_id]
-      );
+      await pool.query('UPDATE cart_item SET cart_id = $1 WHERE cart_id = $2', [
+         userCart.cart_id,
+         guestCart.cart_id
+      ]);
 
       // Delete the guest cart
       await pool.query('DELETE FROM cart WHERE cart_id = $1', [guestCart.cart_id]);
@@ -590,7 +595,7 @@ router.delete('/:cartId/items/:itemId', async (req: Request, res: Response) => {
       const { cartId, itemId } = req.params;
 
       let result = await pool.query(
-         'DELETE FROM cart_item WHERE cartId = $1 AND cart_item_id = $2 RETURNING *',
+         'DELETE FROM cart_item WHERE cart_id = $1 AND cart_item_id = $2 RETURNING *',
          [cartId, itemId]
       );
 
@@ -598,7 +603,10 @@ router.delete('/:cartId/items/:itemId', async (req: Request, res: Response) => {
          return res.status(404).send('Cart item not found');
       }
 
-      res.status(200).send({ message: 'Item removed from cart', item: convertToCamelCase(result.rows[0]) });
+      res.status(200).send({
+         message: 'Item removed from cart',
+         item: convertToCamelCase(result.rows[0])
+      });
    } catch (error) {
       console.error('Error removing item from cart:', error);
       res.status(500).send('Internal Server Error');

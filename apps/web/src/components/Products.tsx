@@ -1,8 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { apiClient, Product, useProducts } from '@/lib/api';
-import { useAuth } from '@/contexts/AuthContext';
+import { Product, useProducts } from '@/lib/api';
+import { useCart } from '@/contexts/CartContext';
 
 export function Products() {
    const { products, loading } = useProducts();
@@ -31,11 +31,13 @@ interface ProductProps {
 
 function ProductDetails({ product }: ProductProps) {
    const { name, price, imageUrl } = product;
-   const user = useAuth();
+   const { addToCart: addProductToCart } = useCart();
 
    const addToCart = async (product: Product) => {
-      await apiClient.addToCart(product.productId, 1, user.userId);
-      alert(`${product.name} has been added to your cart!`);
+      const result = await addProductToCart(product.productId, 1);
+      if (result) {
+         alert(`${product.name} has been added to your cart!`);
+      }
    };
 
    return (
