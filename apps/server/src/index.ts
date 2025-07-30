@@ -21,46 +21,46 @@ dotenv.config({
 });
 
 export const pool = new Pool({
-   // Try non-pooling connection first (often more reliable for SSL)
+   // Use connection string for Supabase (preferred method)
    connectionString: process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL,
-   // Comprehensive SSL configuration for Supabase
-   ssl:
-      process.env.NODE_ENV === 'production'
-         ? { rejectUnauthorized: false }
-         : process.env.POSTGRES_URL || process.env.POSTGRES_URL_NON_POOLING
-           ? {
-                rejectUnauthorized: false,
-                ca: undefined,
-                key: undefined,
-                cert: undefined
-             }
-           : false
+   // SSL configuration for all environments with Supabase
+   ssl: {
+      rejectUnauthorized: false
+   },
+   // Connection pool settings optimized for serverless
+   max: process.env.NODE_ENV === 'production' ? 1 : 10, // Limit connections in serverless
+   idleTimeoutMillis: 30000,
+   connectionTimeoutMillis: 10000
 });
 
-// Test database connection on startup
-console.log('🔌 Attempting database connection...');
-console.log(
-   'Connection string being used:',
-   process.env.POSTGRES_URL_NON_POOLING ? 'NON_POOLING' : 'POOLING'
-);
+// Test database connection on startup (only in development)
+if (process.env.NODE_ENV !== 'production') {
+   console.log('🔌 Attempting database connection...');
+   console.log(
+      'Connection string being used:',
+      process.env.POSTGRES_URL_NON_POOLING ? 'NON_POOLING' : 'POOLING'
+   );
 
-pool.connect((err, client, release) => {
-   if (err) {
-      console.error('❌ Error connecting to database:', err.message);
-      console.error('Connection details:', {
-         hasNonPoolingUrl: !!process.env.POSTGRES_URL_NON_POOLING,
-         hasPoolingUrl: !!process.env.POSTGRES_URL,
-         usingConnection: process.env.POSTGRES_URL_NON_POOLING ? 'NON_POOLING' : 'POOLING',
-         host: process.env.POSTGRES_HOST,
-         database: process.env.POSTGRES_DATABASE,
-         user: process.env.POSTGRES_USER?.substring(0, 5) + '***', // Hide sensitive data
-         port: process.env.POSTGRES_PORT
-      });
-   } else {
-      console.log('✅ Database connected successfully');
-      if (release) release();
-   }
-});
+   pool.connect((err, client, release) => {
+      if (err) {
+         console.error('❌ Error connecting to database:', err.message);
+         console.error('Connection details:', {
+            hasNonPoolingUrl: !!process.env.POSTGRES_URL_NON_POOLING,
+            hasPoolingUrl: !!process.env.POSTGRES_URL,
+            usingConnection: process.env.POSTGRES_URL_NON_POOLING ? 'NON_POOLING' : 'POOLING',
+            host: process.env.POSTGRES_HOST,
+            database: process.env.POSTGRES_DATABASE,
+            user: process.env.POSTGRES_USER?.substring(0, 5) + '***', // Hide sensitive data
+            port: process.env.POSTGRES_PORT
+         });
+      } else {
+         console.log('✅ Database connected successfully');
+         if (release) release();
+      }
+   });
+} else {
+   console.log('🔌 Production mode - database connection will be established on first request');
+}
 
 const app: Express = express();
 
@@ -116,8 +116,39 @@ const corsOptions = {
       'Access-Control-Request-Headers'
    ],
    exposedHeaders: ['Set-Cookie'],
-   optionsSuccessStatus: 200 // For legacy browser support
+   optionsSuccessStatus: 200, // For legacy browser support
+   preflightContinue: false // Let cors handle preflight completely
 };
+
+// Apply CORS before other middleware
+app.use(cors(corsOptions));
+
+// Additional manual preflight handling for Vercel compatibility
+app.options('*', (req: Request, res: Response) => {
+   const origin = req.get('Origin');
+   const allowedOrigins = process.env.CORS_ORIGIN
+      ? process.env.CORS_ORIGIN.split(',').map((o) => o.trim())
+      : ['http://localhost:3000', 'http://localhost:3001'];
+
+   console.log(`Manual OPTIONS preflight - Origin: ${origin}`);
+
+   if (!origin || allowedOrigins.includes(origin)) {
+      res.header('Access-Control-Allow-Origin', origin || '*');
+      res.header('Access-Control-Allow-Credentials', 'true');
+      res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS, PATCH');
+      res.header(
+         'Access-Control-Allow-Headers',
+         'Content-Type, Authorization, X-Requested-With, Accept, Origin, Access-Control-Request-Method, Access-Control-Request-Headers'
+      );
+      res.header('Access-Control-Max-Age', '86400'); // 24 hours
+      console.log(`Manual OPTIONS: Headers set for origin ${origin}`);
+      return res.status(200).end();
+   } else {
+      console.log(`Manual OPTIONS: Origin ${origin} not allowed`);
+      return res.status(403).end();
+   }
+});
+
 app.use(cors(corsOptions));
 
 app.use(
