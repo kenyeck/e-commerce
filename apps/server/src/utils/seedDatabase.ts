@@ -179,18 +179,35 @@ async function seedCategories(client: any): Promise<string[]> {
 }
 
 async function deleteAllStripeProducts() {
-  const products = await stripe.products.list({ limit: 100 });
-  for (const product of products.data) {
-    // Optionally, delete prices first if needed
-    const prices = await stripe.prices.list({ product: product.id, limit: 100 });
-    for (const price of prices.data) {
-      if (price.active) {
-        await stripe.prices.update(price.id, { active: false });
+   const products = await stripe.products.list({ limit: 100 });
+   for (const product of products.data) {
+      // Optionally, deactivate prices first if needed
+      const prices = await stripe.prices.list({ product: product.id, limit: 100 });
+      let archiveProduct = false;
+      for (const price of prices.data) {
+         console.log(
+            `Attempting to deactivate Stripe price: ${price.id} (${product.name}), active: ${price.active}`
+         );
+         if (price.active) {
+            await stripe.prices.update(price.id, { active: false });
+            archiveProduct = true;
+         }
       }
-    }
-    await stripe.products.del(product.id);
-    console.log(`Deleted Stripe product: ${product.name}`);
-  }
+      try {
+         if (archiveProduct) {
+            console.log(`Archiving Stripe product: ${product.name}`);
+            await stripe.products.update(product.id, { active: false });
+         } else {
+            console.log(`Deleting Stripe product: ${product.name}`);
+            await stripe.products.del(product.id);
+         }
+      } catch (error) {
+         console.error(
+            `Failed to delete Stripe product: ${product.name}`,
+            error instanceof Error ? error.message : error
+         );
+      }
+   }
 }
 
 async function seedProducts(client: any, categoryIds: string[]): Promise<string[]> {
@@ -339,24 +356,23 @@ async function seedProducts(client: any, categoryIds: string[]): Promise<string[
    deleteAllStripeProducts(); // Clear existing Stripe products
 
    for (const product of products) {
-
       // Create product in Stripe
       const stripeProduct = await stripe.products.create({
          name: product.name,
          description: product.description,
-         images: product.image_url ? [product.image_url] : [],
+         images: product.image_url ? [product.image_url] : []
       });
 
       const stripePrice = await stripe.prices.create({
          product: stripeProduct.id,
          unit_amount: Math.round(product.price * 100), // Stripe expects cents
-         currency: 'usd',
+         currency: 'usd'
       });
 
       const result = await client.query(
          `
-         INSERT INTO product (name, description, price, stock, category_id, sku, "image_url")
-         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         INSERT INTO product (name, description, price, stock, category_id, sku, image_url, stripe_product_id, stripe_price_id)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
          RETURNING product_id
       `,
          [
@@ -366,7 +382,9 @@ async function seedProducts(client: any, categoryIds: string[]): Promise<string[
             product.stock,
             product.categoryId,
             product.sku,
-            product.image_url
+            product.image_url,
+            stripeProduct.id,
+            stripePrice.id
          ]
       );
 
