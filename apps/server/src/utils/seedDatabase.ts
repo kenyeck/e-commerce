@@ -1,13 +1,14 @@
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
 import bcrypt from 'bcrypt';
+import Stripe from 'stripe';
 
 // Load environment variables
 dotenv.config({
    path: `./.env.${process.env.NODE_ENV ? `${process.env.NODE_ENV}` : 'development'}`
 });
 
-// Database connection
+// Database connection - uses Supabase (via Vercel storage)
 const pool = new Pool({
    user: process.env.POSTGRES_USER,
    host: process.env.POSTGRES_HOST,
@@ -15,6 +16,8 @@ const pool = new Pool({
    password: process.env.POSTGRES_PASSWORD,
    port: Number(process.env.POSTGRES_PORT)
 });
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-07-30.basil' });
 
 export async function seedDatabase() {
    const client = await pool.connect();
@@ -175,6 +178,21 @@ async function seedCategories(client: any): Promise<string[]> {
    return categoryIds;
 }
 
+async function deleteAllStripeProducts() {
+  const products = await stripe.products.list({ limit: 100 });
+  for (const product of products.data) {
+    // Optionally, delete prices first if needed
+    const prices = await stripe.prices.list({ product: product.id, limit: 100 });
+    for (const price of prices.data) {
+      if (price.active) {
+        await stripe.prices.update(price.id, { active: false });
+      }
+    }
+    await stripe.products.del(product.id);
+    console.log(`Deleted Stripe product: ${product.name}`);
+  }
+}
+
 async function seedProducts(client: any, categoryIds: string[]): Promise<string[]> {
    console.log('📦 Seeding products...');
 
@@ -318,7 +336,23 @@ async function seedProducts(client: any, categoryIds: string[]): Promise<string[
 
    const productIds: string[] = [];
 
+   deleteAllStripeProducts(); // Clear existing Stripe products
+
    for (const product of products) {
+
+      // Create product in Stripe
+      const stripeProduct = await stripe.products.create({
+         name: product.name,
+         description: product.description,
+         images: product.image_url ? [product.image_url] : [],
+      });
+
+      const stripePrice = await stripe.prices.create({
+         product: stripeProduct.id,
+         unit_amount: Math.round(product.price * 100), // Stripe expects cents
+         currency: 'usd',
+      });
+
       const result = await client.query(
          `
          INSERT INTO product (name, description, price, stock, category_id, sku, "image_url")
