@@ -33,13 +33,16 @@ export function Button({
    variant = 'secondary',
    onClick = () => {},
    disabled = false,
-   children
+   children,
+   ...styleProps
 }: ButtonProps) {
+
+   const buttonStyles = className ? {} : { ...(variant == 'primary' ? primaryButtonStyles : secondaryButtonStyles), ...styleProps };
    return (
       <button
          id={id}
          className={className}
-         style={{ ...(variant == 'primary' ? primaryButtonStyles : secondaryButtonStyles) }}
+         style={buttonStyles}
          onClick={onClick}
          disabled={disabled}
       >

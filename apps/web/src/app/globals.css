@@ -5,6 +5,8 @@
   --foreground: #171717;
 }
 
+@custom-variant dark (&:where(.dark, .dark *));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -12,15 +14,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.menu-icon {
+  @apply flex cursor-pointer items-center justify-center rounded-full border-none bg-gray-100 p-2 transition-colors hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-600;
+}
+
+.nav-link {
+  @apply text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:underline;
 }

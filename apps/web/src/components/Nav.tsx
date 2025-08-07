@@ -1,219 +1,125 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { FaShoppingCart, FaUser } from 'react-icons/fa';
-import { useAuth } from '@/contexts/AuthContext';
-import { useCart } from '@/contexts/CartContext';
-import { CommonLinks } from './CommonLinks';
+import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
+import { FaMoon, FaShoppingCart, FaSun, FaUser } from "react-icons/fa";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCart } from "@/contexts/CartContext";
+import { CommonLinks } from "./CommonLinks";
+import { Button } from "../../../../packages/ui/src/button";
 
 export function Nav() {
-   const { isAuthenticated, logout } = useAuth();
-   const { cartItemCount } = useCart();
-   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-   const dropdownRef = useRef<HTMLDivElement>(null);
+  const { isAuthenticated, logout } = useAuth();
+  const { cartItemCount } = useCart();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-   const onLogout = async () => {
-      await logout();
-      setIsDropdownOpen(false);
-   };
+  const onLogout = async () => {
+    await logout();
+    setIsDropdownOpen(false);
+  };
 
-   const toggleDropdown = () => {
-      setIsDropdownOpen(!isDropdownOpen);
-   };
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+  };
 
-   // Close dropdown when clicking outside
-   useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
-         if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-            setIsDropdownOpen(false);
-         }
-      };
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    };
 
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-         document.removeEventListener('mousedown', handleClickOutside);
-      };
-   }, []);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
 
-   return (
-      <nav
-         style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: '100%',
-            padding: '10px',
-            background: 'black',
-            boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-            position: 'fixed',
-            zIndex: 2,
-            paddingLeft: '50px',
-            paddingRight: '50px'
-         }}
-      >
-         <Link
-            href="/"
-            style={{
-               textDecoration: 'none',
-               color: 'inherit',
-               fontSize: '1.5em',
-               fontWeight: 'bold'
-            }}
-         >
-            E-Commerce
-         </Link>
-         <div
-            style={{
-               display: 'flex',
-               flexDirection: 'row',
-               justifyContent: 'flex-end',
-               alignItems: 'center',
-               gap: '18px'
-            }}
-         >
-            <CommonLinks />
-            <div ref={dropdownRef} style={{ position: 'relative' }}>
-               <button
-                  onClick={toggleDropdown}
-                  style={{
-                     background: 'none',
-                     border: 'none',
-                     color: '#93c5fd',
-                     fontSize: '1.2em',
-                     cursor: 'pointer',
-                     padding: '8px',
-                     borderRadius: '4px',
-                     display: 'flex',
-                     alignItems: 'center',
-                     justifyContent: 'center'
-                  }}
-                  onMouseEnter={(e) =>
-                     (e.currentTarget.style.backgroundColor = 'rgba(59, 130, 246, 0.1)')
-                  }
-                  onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-               >
-                  <FaUser />
-               </button>
-               {isDropdownOpen && (
-                  <div
-                     style={{
-                        position: 'absolute',
-                        top: '100%',
-                        right: 0,
-                        backgroundColor: 'white',
-                        border: '1px solid #e5e7eb',
-                        borderRadius: '8px',
-                        boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                        minWidth: '120px',
-                        zIndex: 1000,
-                        marginTop: '4px'
-                     }}
+  return (
+    <nav className="fixed top-0 right-0 left-0 flex h-16 items-center justify-between bg-gray-100 p-4 pr-12 pl-12 shadow-md backdrop-blur dark:bg-gray-800/80 dark:text-white">
+      <Link className="text-2xl font-bold" href="/">
+        E-Commerce
+      </Link>
+      <div className="flex items-center gap-4">
+        <CommonLinks />
+        <div ref={dropdownRef} className="relative">
+          <button className="menu-icon" onClick={toggleDropdown}>
+            <FaUser />
+          </button>
+          {isDropdownOpen && (
+            <div className="absolute right-0 mt-2 min-w-28 rounded-lg border border-gray-200 bg-gray-100 text-gray-800 shadow-lg dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+              {!isAuthenticated ? (
+                <Link
+                  href="/login"
+                  className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-600"
+                  onClick={() => setIsDropdownOpen(false)}
+                >
+                  Login
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/profile"
+                    className="block px-4 py-2 text-sm text-gray-800 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-600"
+                    onClick={() => setIsDropdownOpen(false)}
                   >
-                     {!isAuthenticated ? (
-                        <Link
-                           href="/login"
-                           style={{
-                              display: 'block',
-                              padding: '12px 16px',
-                              color: '#374151',
-                              textDecoration: 'none',
-                              fontSize: '14px',
-                              borderRadius: '8px'
-                           }}
-                           onMouseEnter={(e) => {
-                              e.currentTarget.style.backgroundColor = '#e5e7eb';
-                              e.currentTarget.style.borderRadius = '8px';
-                           }}
-                           onMouseLeave={(e) => {
-                              e.currentTarget.style.backgroundColor = 'transparent';
-                           }}
-                           onClick={() => setIsDropdownOpen(false)}
-                        >
-                           Login
-                        </Link>
-                     ) : (
-                        <>
-                           <Link
-                              href="/profile"
-                              style={{
-                                 display: 'block',
-                                 padding: '12px 16px',
-                                 color: '#374151',
-                                 textDecoration: 'none',
-                                 fontSize: '14px',
-                                 borderBottom: '1px solid #f3f4f6',
-                                 borderRadius: '8px 8px 0 0'
-                              }}
-                              onMouseEnter={(e) => {
-                                 e.currentTarget.style.backgroundColor = '#e5e7eb';
-                                 e.currentTarget.style.borderRadius = '8px 8px 0 0';
-                              }}
-                              onMouseLeave={(e) => {
-                                 e.currentTarget.style.backgroundColor = 'transparent';
-                              }}
-                              onClick={() => setIsDropdownOpen(false)}
-                           >
-                              Profile
-                           </Link>
-                           <button
-                              onClick={onLogout}
-                              style={{
-                                 width: '100%',
-                                 padding: '12px 16px',
-                                 color: '#374151',
-                                 backgroundColor: 'transparent',
-                                 border: 'none',
-                                 textAlign: 'left',
-                                 fontSize: '14px',
-                                 cursor: 'pointer',
-                                 borderRadius: '0 0 8px 8px'
-                              }}
-                              onMouseEnter={(e) => {
-                                 e.currentTarget.style.backgroundColor = '#e5e7eb';
-                                 e.currentTarget.style.borderRadius = '0 0 8px 8px';
-                              }}
-                              onMouseLeave={(e) => {
-                                 e.currentTarget.style.backgroundColor = 'transparent';
-                              }}
-                           >
-                              Logout
-                           </button>
-                        </>
-                     )}
-                  </div>
-               )}
+                    Profile
+                  </Link>
+                  <button
+                    onClick={onLogout}
+                    className="block w-full cursor-pointer px-4 py-2 text-left text-sm text-gray-800 hover:bg-gray-200 dark:text-gray-200 dark:hover:bg-gray-600"
+                  >
+                    Logout
+                  </button>
+                </>
+              )}
             </div>
-            <Link
-               href="/cart"
-               className="text-blue-300 hover:underline"
-               style={{ position: 'relative', display: 'inline-block' }}
+          )}
+        </div>
+        <ColorModeToggle />
+        <Link href="/cart" className="menu-icon relative">
+          <FaShoppingCart />
+          {cartItemCount > 0 && (
+            <span
+              className={`absolute rounded-full bg-red-500 text-white ${cartItemCount > 99 ? "-top-2 -right-2 h-6 w-6" : "-top-1 -right-1 h-5 w-5"} flex items-center justify-center text-xs font-bold`}
             >
-               <FaShoppingCart />
-               {cartItemCount > 0 && (
-                  <span
-                     style={{
-                        position: 'absolute',
-                        top: '-8px',
-                        right: '-8px',
-                        backgroundColor: '#ef4444',
-                        color: 'white',
-                        borderRadius: '50%',
-                        width: '18px',
-                        height: '18px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '10px',
-                        fontWeight: 'bold',
-                        minWidth: '18px'
-                     }}
-                  >
-                     {cartItemCount > 99 ? '99+' : cartItemCount}
-                  </span>
-               )}
-            </Link>
-         </div>
-      </nav>
-   );
+              {cartItemCount > 99 ? "99+" : cartItemCount}
+            </span>
+          )}
+        </Link>
+      </div>
+    </nav>
+  );
+}
+
+function ColorModeToggle() {
+  const [dark, setDark] = useState(false);
+
+  useEffect(() => {
+    const isDark = window.matchMedia("(class: dark)").matches;
+    setDark(document.documentElement.classList.contains("dark") || isDark);
+  }, []);
+
+  const toggle = () => {
+    setDark((prev) => {
+      const next = !prev;
+      if (next) {
+        document.documentElement.classList.add("dark");
+      } else {
+        document.documentElement.classList.remove("dark");
+      }
+      return next;
+    });
+  };
+
+  return (
+    <Button className="menu-icon" onClick={toggle}>
+      {dark ? <FaMoon /> : <FaSun />}
+    </Button>
+  );
 }

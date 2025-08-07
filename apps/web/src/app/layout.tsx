@@ -1,122 +1,77 @@
-import type { Metadata } from 'next';
-import { Geist, Geist_Mono } from 'next/font/google';
-import './globals.css';
-import { AuthProvider } from '../contexts/AuthContext';
-import { CartProvider } from '../contexts/CartContext';
-import { Nav } from '@/components/Nav';
-import { CommonLinks } from '@/components/CommonLinks';
-import Link from 'next/link';
+import type { Metadata } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
+import "./globals.css";
+import { AuthProvider } from "../contexts/AuthContext";
+import { CartProvider } from "../contexts/CartContext";
+import { Nav } from "@/components/Nav";
+import { CommonLinks } from "@/components/CommonLinks";
+import Link from "next/link";
+import { HorizontalLine } from "@e-commerce/ui";
 
 const geistSans = Geist({
-   variable: '--font-geist-sans',
-   subsets: ['latin']
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
 });
 
 const geistMono = Geist_Mono({
-   variable: '--font-geist-mono',
-   subsets: ['latin']
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
-   title: 'E-Commerce App',
-   description: 'E-Commerce Application built with Next.js and Express'
+  title: `${process.env.NEXT_PUBLIC_SITE_NAME} App`,
+  description: `${process.env.NEXT_PUBLIC_SITE_NAME} application built with Next.js and Express`,
 };
 
-// <div
-//    style={{
-//       fontFamily: 'ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif',
-//       display: 'grid',
-//       //gridTemplateRows: '20px 1fr 20px',
-//       alignItems: 'center',
-//       justifyItems: 'center',
-//       //minHeight: '100vh',
-//       padding: '2rem',
-//       paddingTop: '5rem',
-//       paddingBottom: '5rem',
-//       gap: '3rem'
-//    }}
-// >
-
 export default function RootLayout({
-   children
+  children,
 }: Readonly<{
-   children: React.ReactNode;
+  children: React.ReactNode;
 }>) {
-   return (
-      <html lang="en">
-         <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-            <AuthProvider>
-               <CartProvider>
-                  <>
-                     <Nav />
-                     <main
-                        style={{
-                           flex: '1',
-                           marginTop: '0px',
-                           marginBottom: '0px',
-                           display: 'flex',
-                           justifyContent: 'center',
-                           alignItems: 'flex-start'
-                        }}
-                     >
-                        <div
-                           style={{
-                              maxWidth: '1200px',
-                              width: '100%',
-                              padding: '0 20px',
-                              boxSizing: 'border-box'
-                           }}
-                        >
-                           <div
-                              style={{
-                                 display: 'grid',
-                                 alignItems: 'center',
-                                 justifyItems: 'center',
-                                 padding: '2rem',
-                                 paddingTop: '5rem',
-                                 paddingBottom: '5rem',
-                                 gap: '3rem'
-                              }}
-                           >
-                              {children}
-                           </div>
-                        </div>
-                     </main>
-
-                     <footer
-                        style={{
-                           textAlign: 'center',
-                           paddingLeft: '50px',
-                           paddingRight: '50px'
-                        }}
-                     >
-                        <div
-                           style={{
-                              display: 'flex',
-                              justifyContent: 'center',
-                              alignItems: 'center',
-                              gap: '20px'
-                           }}
-                        >
-                           <CommonLinks />
-                           <Link href="/about" className="text-blue-500 hover:underline">
-                              About Us
-                           </Link>
-                           <Link href="/contact" className="text-blue-500 hover:underline">
-                              Contact
-                           </Link>
-                           <Link href="/privacy" className="text-blue-500 hover:underline">
-                              Privacy Policy
-                           </Link>
-                        </div>
-                        <div style={{ padding: '20px' }}>
-                           {`© ${new Date().getFullYear()} E-commerce Platform. All rights reserved.`}
-                        </div>
-                     </footer>
-                  </>
-               </CartProvider>
-            </AuthProvider>
-         </body>
-      </html>
-   );
+  return (
+    <html lang="en">
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <AuthProvider>
+          <CartProvider>
+            <div className="flex min-h-screen flex-col bg-gray-100 text-black dark:bg-gray-800 dark:text-gray-100">
+              <Nav />
+              <main className="mt-0 mb-0 flex flex-1 items-start justify-center">
+                <div className="mx-auto flex max-w-screen-xl px-4">
+                  <div className="grid place-items-center gap-12 p-7 pt-20 pb-20">
+                    {children}
+                  </div>
+                </div>
+              </main>
+              <footer className="pr-12 pl-12">
+                  <HorizontalLine />
+                <div className="flex items-center justify-center gap-5">
+                  <CommonLinks />
+                  <Link href="/about" className="nav-link">
+                    About Us
+                  </Link>
+                  <Link
+                    href="/contact"
+                    className="nav-link"
+                  >
+                    Contact
+                  </Link>
+                  <Link
+                    href="/privacy"
+                    className="nav-link"
+                  >
+                    Privacy Policy
+                  </Link>
+                </div>
+                <div className="align p-5 text-center text-sm text-gray-300 dark:text-gray-500">
+                  {`© ${new Date().getFullYear()} ${process.env.NEXT_PUBLIC_SITE_NAME} Platform. All rights reserved.`}
+                </div>
+              </footer>
+            </div>
+          </CartProvider>
+        </AuthProvider>
+      </body>
+    </html>
+  );
 }
