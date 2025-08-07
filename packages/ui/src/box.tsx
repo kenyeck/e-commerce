@@ -1,9 +1,12 @@
-import { CSSProperties } from 'react';
+import { BaseProps } from "./base";
 
-export interface BoxProps extends CSSProperties {
-   className?: string;
-   children: React.ReactNode;
-}
-export function Box({ children, ...styleProps }: BoxProps) {
-   return <div style={{ ...styleProps }}>{children}</div>;
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+export interface BoxProps extends BaseProps {}
+
+export function Box({ id, className, children, ...styleProps }: BoxProps) {
+   return (
+      <div id={id} className={className} style={{ ...styleProps }}>
+         {children}
+      </div>
+   );
 }

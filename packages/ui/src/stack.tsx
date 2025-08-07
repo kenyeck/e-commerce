@@ -1,10 +1,9 @@
-import { CSSProperties } from "react";
+import { BaseProps } from "./base";
 
-interface StackProps extends CSSProperties {
-   children: React.ReactNode;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface StackProps extends BaseProps {}
 
-export function Stack({ children, ...styleProps }: StackProps) {
-   return <div style={{ display: 'flex', ...styleProps }}>{children}</div>;
+export function Stack({ id, className, children, ...styleProps }: StackProps) {
+   return <div id={id} className={className} style={{ display: 'flex', ...styleProps }}>{children}</div>;
 }
 

@@ -1,12 +1,13 @@
-import { CSSProperties } from "react";
+import { BaseProps } from './base';
 
-interface CardProps extends CSSProperties {
-   children: React.ReactNode;
-}
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
+interface CardProps extends BaseProps {}
 
-export function Card({ children, ...styleProps }: CardProps) {
+export function Card({ id, className, children, ...styleProps }: CardProps) {
    return (
       <div
+         id={id}
+         className={className}
          style={{
             border: '1px solid #e0e0e0',
             borderRadius: '8px',

@@ -1,4 +1,5 @@
 import { CSSProperties } from 'react';
+import { BaseProps } from './base';
 
 const commonButtonStyles: CSSProperties = {
    padding: '10px 20px',
@@ -20,16 +21,15 @@ const secondaryButtonStyles: CSSProperties = {
    border: '1px solid #e0e0e0'
 };
 
-export interface ButtonProps extends CSSProperties {
-   className?: string;
+export interface ButtonProps extends BaseProps {
    variant?: 'primary' | 'secondary';
    onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
    disabled?: boolean;
-   children?: React.ReactNode;
 }
 
 export function Button({
-   className = '',
+   id,
+   className,
    variant = 'secondary',
    onClick = () => {},
    disabled = false,
@@ -37,6 +37,7 @@ export function Button({
 }: ButtonProps) {
    return (
       <button
+         id={id}
          className={className}
          style={{ ...(variant == 'primary' ? primaryButtonStyles : secondaryButtonStyles) }}
          onClick={onClick}
