@@ -9,12 +9,17 @@ dotenv.config({
 });
 
 // Database connection - uses Supabase (via Vercel storage)
+// const pool = new Pool({
+//    user: process.env.POSTGRES_USER,
+//    host: process.env.POSTGRES_HOST,
+//    database: process.env.POSTGRES_DB,
+//    password: process.env.POSTGRES_PASSWORD,
+//    port: Number(process.env.POSTGRES_PORT)
+// });
+
+// Local database connection for development
 const pool = new Pool({
-   user: process.env.POSTGRES_USER,
-   host: process.env.POSTGRES_HOST,
-   database: process.env.POSTGRES_DB,
-   password: process.env.POSTGRES_PASSWORD,
-   port: Number(process.env.POSTGRES_PORT)
+   connectionString: 'postgresql://postgres:Jyc%5EV0%2532HxAPDI3@127.0.0.1:5432/postgres' //process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL,
 });
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2025-07-30.basil' });
@@ -353,10 +358,15 @@ async function seedProducts(client: any, categoryIds: string[]): Promise<string[
 
    const productIds: string[] = [];
 
-   deleteAllStripeProducts(); // Clear existing Stripe products
+   //deleteAllStripeProducts(); // Clear existing Stripe products
 
    for (const product of products) {
       // Create product in Stripe
+      // const stripeProduct = await stripe.products.search({ query: `name:"${product.name}"`, limit: 1 });
+      // const stripePrice = await stripe.prices.search({ query: `product:"${stripeProduct.data[0].id}"`, limit: 1 });
+      // console.log(
+      //    `Stripe info: ${product.name} => ${stripeProduct.data[0].id} / ${stripePrice.data[0].id || 'No price found'}`
+      // );
       const stripeProduct = await stripe.products.create({
          name: product.name,
          description: product.description,

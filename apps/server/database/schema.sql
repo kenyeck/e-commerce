@@ -50,6 +50,8 @@ CREATE TABLE product (
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
+    stripe_product_id VARCHAR,
+    stripe_price_id VARCHAR,
     FOREIGN KEY (category_id) REFERENCES category (category_id)
 );
 
