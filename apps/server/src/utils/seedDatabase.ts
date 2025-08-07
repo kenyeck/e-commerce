@@ -361,23 +361,25 @@ async function seedProducts(client: any, categoryIds: string[]): Promise<string[
    //deleteAllStripeProducts(); // Clear existing Stripe products
 
    for (const product of products) {
+      // Search for existing product in Stripe
+      let stripeProduct = (await stripe.products.search({ query: `name:"${product.name}"`, limit: 1 })).data[0];
+      let stripePrice = (await stripe.prices.search({ query: `product:"${stripeProduct.id}"`, limit: 1 })).data[0];
+      console.log(
+         `Stripe info: ${product.name} => ${stripeProduct.id} / ${stripePrice.id || 'No price found'}`
+      );
+      
       // Create product in Stripe
-      // const stripeProduct = await stripe.products.search({ query: `name:"${product.name}"`, limit: 1 });
-      // const stripePrice = await stripe.prices.search({ query: `product:"${stripeProduct.data[0].id}"`, limit: 1 });
-      // console.log(
-      //    `Stripe info: ${product.name} => ${stripeProduct.data[0].id} / ${stripePrice.data[0].id || 'No price found'}`
-      // );
-      const stripeProduct = await stripe.products.create({
-         name: product.name,
-         description: product.description,
-         images: product.image_url ? [product.image_url] : []
-      });
+      // const stripeProduct = await stripe.products.create({
+      //    name: product.name,
+      //    description: product.description,
+      //    images: product.image_url ? [product.image_url] : []
+      // });
 
-      const stripePrice = await stripe.prices.create({
-         product: stripeProduct.id,
-         unit_amount: Math.round(product.price * 100), // Stripe expects cents
-         currency: 'usd'
-      });
+      // const stripePrice = await stripe.prices.create({
+      //    product: stripeProduct.id,
+      //    unit_amount: Math.round(product.price * 100), // Stripe expects cents
+      //    currency: 'usd'
+      // });
 
       const result = await client.query(
          `
