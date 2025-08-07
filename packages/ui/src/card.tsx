@@ -1,27 +1,22 @@
-import { type JSX } from "react";
+import { CSSProperties } from "react";
 
-export function Card({
-  className,
-  title,
-  children,
-  href,
-}: {
-  className?: string;
-  title: string;
-  children: React.ReactNode;
-  href: string;
-}): JSX.Element {
-  return (
-    <a
-      className={className}
-      href={`${href}?utm_source=create-turbo&utm_medium=basic&utm_campaign=create-turbo"`}
-      rel="noopener noreferrer"
-      target="_blank"
-    >
-      <h2>
-        {title} <span>-&gt;</span>
-      </h2>
-      <p>{children}</p>
-    </a>
-  );
+interface CardProps extends CSSProperties {
+   children: React.ReactNode;
+}
+
+export function Card({ children, ...styleProps }: CardProps) {
+   return (
+      <div
+         style={{
+            border: '1px solid #e0e0e0',
+            borderRadius: '8px',
+            padding: '20px',
+            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
+            minWidth: '500px',
+            ...styleProps
+         }}
+      >
+         {children}
+      </div>
+   );
 }

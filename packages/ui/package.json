@@ -1,9 +1,9 @@
 {
-  "name": "@repo/ui",
+  "name": "@e-commerce/ui",
   "version": "0.0.0",
   "private": true,
   "exports": {
-    "./*": "./src/*.tsx"
+    ".": "./index.ts"
   },
   "scripts": {
     "lint": "eslint . --max-warnings 0",

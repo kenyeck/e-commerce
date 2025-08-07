@@ -1,20 +1,48 @@
-"use client";
+import { CSSProperties } from 'react';
 
-import { ReactNode } from "react";
+const commonButtonStyles: CSSProperties = {
+   padding: '10px 20px',
+   borderRadius: '5px',
+   cursor: 'pointer'
+};
 
-interface ButtonProps {
-  children: ReactNode;
-  className?: string;
-  appName: string;
+const primaryButtonStyles: CSSProperties = {
+   ...commonButtonStyles,
+   backgroundColor: '#0070f3',
+   color: 'white',
+   border: 'none'
+};
+
+const secondaryButtonStyles: CSSProperties = {
+   ...commonButtonStyles,
+   backgroundColor: 'transparent',
+   color: 'gray',
+   border: '1px solid #e0e0e0'
+};
+
+export interface ButtonProps extends CSSProperties {
+   className?: string;
+   variant?: 'primary' | 'secondary';
+   onClick?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+   disabled?: boolean;
+   children?: React.ReactNode;
 }
 
-export const Button = ({ children, className, appName }: ButtonProps) => {
-  return (
-    <button
-      className={className}
-      onClick={() => alert(`Hello from your ${appName} app!`)}
-    >
-      {children}
-    </button>
-  );
-};
+export function Button({
+   className = '',
+   variant = 'secondary',
+   onClick = () => {},
+   disabled = false,
+   children
+}: ButtonProps) {
+   return (
+      <button
+         className={className}
+         style={{ ...(variant == 'primary' ? primaryButtonStyles : secondaryButtonStyles) }}
+         onClick={onClick}
+         disabled={disabled}
+      >
+         {children}
+      </button>
+   );
+}

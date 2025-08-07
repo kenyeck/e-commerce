@@ -1,9 +1,9 @@
 {
   "name": "@e-commerce/types",
   "version": "1.0.0",
-  "main": "index.ts",
-  "types": "index.ts",
+  "main": "index.d.ts",
+  "types": "index.d.ts",
   "exports": {
-    ".": "./index.ts"
+    ".": "./index.d.ts"
   }
 }

@@ -1,5 +1,6 @@
 // Shared types for both frontend and backend
 
+// Define types locally for now
 export interface User {
    userId: string;
    username: string;
@@ -25,6 +26,8 @@ export interface Product {
    isActive: boolean;
    createdAt: Date;
    updatedAt: Date;
+   stripeProductId?: string; // Optional for Stripe integration
+   stripePriceId?: string; // Optional for Stripe integration
 }
 
 export interface Category {
@@ -39,9 +42,11 @@ export interface Category {
 
 export interface Cart {
    cartId: string;
-   userId: string;
+   userId?: string; // Optional for guest carts
+   sessionId?: string; // For guest sessions
    createdAt: Date;
    updatedAt: Date;
+   items?: CartItem[];
 }
 
 export interface CartItem {
@@ -49,22 +54,13 @@ export interface CartItem {
    cartId: string;
    productId: string;
    quantity: number;
-   price: number;
-   createdAt: Date;
-   updatedAt: Date;
-}
-
-export interface Product {
-   productId: string;
-   name: string;
-   description?: string;
-   price: number;
-   stockQuantity: number;
-   categoryId?: string;
-   imageUrl?: string;
-   isActive: boolean;
-   createdAt: Date;
-   updatedAt: Date;
+   addedAt: Date;
+   productName: string;
+   productDescription?: string;
+   unitPrice: number;
+   imageUrl: string;
+   stripeProductId: string; // Optional for Stripe integration
+   stripePriceId: string; // Optional for Stripe integration
 }
 
 export interface Order {
@@ -88,6 +84,21 @@ export interface OrderItem {
    updatedAt: Date;
 }
 
+export interface CompleteOrder {
+   orderId: string;
+   userId: string;
+   status: string;
+   createdAt: Date;
+   updatedAt: Date;
+   items: Array<{
+      orderItemId: string;
+      productId: string;
+      quantity: number;
+      priceAtTime: number;
+      productName: string;
+   }>;
+}
+
 // Request/Response types
 export interface LoginRequest {
    username: string;
@@ -106,6 +117,11 @@ export interface RegisterRequest {
    firstName?: string;
    lastName?: string;
    phone?: string;
+}
+
+export interface CreateCheckoutSessionResponse {
+   sessionId: string;
+   url: string;
 }
 
 // API Response wrapper
