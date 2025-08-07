@@ -1,73 +1,6 @@
 import { useState, useEffect } from 'react';
-
-// Define types locally for now
-export interface User {
-   userId: string;
-   username: string;
-   email: string;
-   firstName?: string;
-   lastName?: string;
-   phone?: string;
-   isActive: boolean;
-   isEmailVerified: boolean;
-   lastLoginAt?: Date;
-   createdAt: Date;
-   updatedAt: Date;
-}
-
-export interface Product {
-   productId: string;
-   name: string;
-   description?: string;
-   price: number;
-   stockQuantity: number;
-   categoryId?: string;
-   imageUrl?: string;
-   isActive: boolean;
-   createdAt: Date;
-   updatedAt: Date;
-}
-
-export interface Category {
-   categoryId: string;
-   name: string;
-   description?: string;
-   parentCategoryId?: string;
-   isActive: boolean;
-   createdAt: Date;
-   updatedAt: Date;
-}
-
-export interface Cart {
-   cartId: string;
-   userId?: string; // Optional for guest carts
-   sessionId?: string; // For guest sessions
-   createdAt: Date;
-   updatedAt: Date;
-   items?: CartItem[];
-}
-
-export interface CartItem {
-   cartItemId: string;
-   cartId: string;
-   productId: string;
-   quantity: number;
-   addedAt: Date;
-   productName: string;
-   productDescription?: string;
-   unitPrice: number;
-   imageUrl: string;
-}
-
-export interface LoginRequest {
-   username: string;
-   password: string;
-}
-
-export interface LoginResponse {
-   message: string;
-   user: Omit<User, 'passwordHash'>;
-}
+import { User, Product, Category, Cart, CartItem, LoginRequest, LoginResponse, CreateCheckoutSessionResponse } from '@e-commerce/types';
+import { Stripe } from 'stripe';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -209,7 +142,6 @@ class ApiClient {
          // Check for guest cart
          const guestCartId = getGuestCartId();
          if (guestCartId) {
-            console.log('Fetching guest cart:', guestCartId);
             return this.request<Cart>(`/api/carts/${guestCartId}`);
          }
          return null;
@@ -267,7 +199,26 @@ class ApiClient {
       clearGuestCart();
       return mergedCart;
    }
+
+ 
+   async createCheckoutSession(items: CartItem[]): Promise<CreateCheckoutSessionResponse> {
+      if (items.length === 0) {
+         throw new Error('No items to checkout');
+      }
+
+      const response = await this.request<CreateCheckoutSessionResponse>('/api/checkout', {
+         method: 'POST',
+         body: JSON.stringify({ items })
+      });
+
+      return response;
+   }
+
+   async retrieveCheckoutSession(sessionId: string): Promise<Stripe.Checkout.Session> {
+      return this.request<Stripe.Checkout.Session>(`/api/checkout/sessions/${sessionId}`);
+   }
 }
+
 
 // Create singleton instance
 export const apiClient = new ApiClient(API_BASE_URL);

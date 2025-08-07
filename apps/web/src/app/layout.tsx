@@ -50,65 +50,69 @@ export default function RootLayout({
                   <>
                      <Nav />
                      <main
-                     style={{
-                        flex: '1',
-                        marginTop: '0px',
-                        marginBottom: '0px',
-                        display: 'flex',
-                        justifyContent: 'center',
-                        alignItems: 'flex-start'
-                     }}
-                  >
-                     <div
                         style={{
-                           maxWidth: '1200px',
-                           width: '100%',
-                           padding: '0 20px',
-                           boxSizing: 'border-box'
+                           flex: '1',
+                           marginTop: '0px',
+                           marginBottom: '0px',
+                           display: 'flex',
+                           justifyContent: 'center',
+                           alignItems: 'flex-start'
                         }}
                      >
                         <div
                            style={{
-                              display: 'grid',
-                              alignItems: 'center',
-                              justifyItems: 'center',
-                              padding: '2rem',
-                              paddingTop: '5rem',
-                              paddingBottom: '5rem',
-                              gap: '3rem'
+                              maxWidth: '1200px',
+                              width: '100%',
+                              padding: '0 20px',
+                              boxSizing: 'border-box'
                            }}
                         >
-                           {children}
+                           <div
+                              style={{
+                                 display: 'grid',
+                                 alignItems: 'center',
+                                 justifyItems: 'center',
+                                 padding: '2rem',
+                                 paddingTop: '5rem',
+                                 paddingBottom: '5rem',
+                                 gap: '3rem'
+                              }}
+                           >
+                              {children}
+                           </div>
                         </div>
-                     </div>
-                  </main>
+                     </main>
 
-                  <footer
-                     style={{ textAlign: 'center', paddingLeft: '50px', paddingRight: '50px' }}
-                  >
-                     <div
+                     <footer
                         style={{
-                           display: 'flex',
-                           justifyContent: 'center',
-                           alignItems: 'center',
-                           gap: '20px'
+                           textAlign: 'center',
+                           paddingLeft: '50px',
+                           paddingRight: '50px'
                         }}
                      >
-                        <CommonLinks />
-                        <Link href="/about" className="text-blue-300 hover:underline">
-                           About Us
-                        </Link>
-                        <Link href="/contact" className="text-blue-300 hover:underline">
-                           Contact
-                        </Link>
-                        <Link href="/privacy" className="text-blue-300 hover:underline">
-                           Privacy Policy
-                        </Link>
-                     </div>
-                     <div style={{ padding: '20px' }}>
-                        {`© ${new Date().getFullYear()} E-commerce Platform. All rights reserved.`}
-                     </div>
-                  </footer>
+                        <div
+                           style={{
+                              display: 'flex',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              gap: '20px'
+                           }}
+                        >
+                           <CommonLinks />
+                           <Link href="/about" className="text-blue-500 hover:underline">
+                              About Us
+                           </Link>
+                           <Link href="/contact" className="text-blue-500 hover:underline">
+                              Contact
+                           </Link>
+                           <Link href="/privacy" className="text-blue-500 hover:underline">
+                              Privacy Policy
+                           </Link>
+                        </div>
+                        <div style={{ padding: '20px' }}>
+                           {`© ${new Date().getFullYear()} E-commerce Platform. All rights reserved.`}
+                        </div>
+                     </footer>
                   </>
                </CartProvider>
             </AuthProvider>

@@ -2,73 +2,138 @@
 
 import Image from 'next/image';
 import { FaTrash } from 'react-icons/fa';
-import { CartItem } from '@/lib/api';
+import { apiClient } from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
 import Link from 'next/dist/client/link';
+import { useRouter } from 'next/navigation';
+import { CartItem } from '@e-commerce/types';
+import { Card, Stack, Box, Button, HorizontalLine } from '@e-commerce/ui';
 
 export function Cart() {
-   const { cartItems, loading, removeFromCart } = useCart();
+   const { cartItems, loading } = useCart();
 
    if (loading) {
       return <div style={{ fontSize: '2em' }}>Loading...</div>;
    }
+
+   return (
+      <>
+         {cartItems.length > 0 ? (
+            <Box>
+               <Stack
+                  alignItems="center"
+                  gap="10px"
+               >
+                  <Box fontWeight="bold" fontSize="1.75em">Cart</Box>
+                  <Box fontSize="1.5em">{`(${cartItems.length} items)`}</Box>
+               </Stack>
+               <CartSummary />
+            </Box>
+         ) : (
+            <Box fontSize="1.5em">{'Your cart is empty'}</Box>
+         )}
+      </>
+   );
+}
+
+interface CartSummaryProps {
+   totalOnly?: boolean;
+}
+export function CartSummary({ totalOnly }: CartSummaryProps) {
+   const { cartItems, removeFromCart } = useCart();
+   const router = useRouter();
+
+   const handleCheckout = async (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.preventDefault();
+      const products = await apiClient.getProducts();
+      const response = await apiClient.createCheckoutSession(
+         cartItems.map(
+            (x) =>
+               ({
+                  ...x,
+                  stripePriceId: products.find((p) => p.productId === x.productId)?.stripePriceId
+               }) as CartItem
+         )
+      );
+      router.push(response.url);
+   };
 
    const removeItem = async (cartItemId: string) => {
       await removeFromCart(cartItemId);
    };
 
    return (
-      <div>
-         <h1
-            style={{ fontSize: '2em' }}
-         >{`${cartItems.length > 0 ? 'Items in your cart' : 'Your cart is empty'}`}</h1>
+      <>
          {cartItems.length > 0 && (
-            <ul style={{ listStyleType: 'none', paddingTop: '20px' }}>
-               {cartItems.map((item) => (
-                  <li key={item.productId} style={{ marginBottom: '20px' }}>
-                     <CartItemDetail item={item} removeItem={removeItem} />
-                  </li>
-               ))}
-               <li>
-                  <div
-                     style={{
-                        display: 'flex',
-                        flexDirection: 'row',
-                        justifyContent: 'space-between',
-                        alignItems: 'center'
-                     }}
-                  >
-                     <Link href="/products">Continue shopping...</Link>
-                     <div
-                        style={{
-                           display: 'flex',
-                           justifyContent: 'flex-end',
-                           //padding: '10px 35px',
-                           gap: '20px'
-                        }}
+            <>
+               <ul style={{ listStyleType: 'none', paddingTop: '20px' }}>
+                  {cartItems.map((item) => (
+                     <li key={item.productId} style={{ marginBottom: '10px' }}>
+                        <CartItemDetail
+                           item={item}
+                           removeItem={totalOnly ? undefined : removeItem}
+                        />
+                     </li>
+                  ))}
+               </ul>
+
+               <Card marginTop="40px">
+                  <Stack flexDirection="column" justifyContent="space-between" gap="15px">
+                     <Stack justifyContent="space-between">
+                        <Stack flexDirection="row" alignItems="flex-end">
+                           <Box fontWeight="bold">Subtotal</Box>
+                           <Box marginLeft="5px">{`(${cartItems.length} items)`}</Box>
+                        </Stack>
+                        <Stack flexDirection="row" alignItems="flex-end">
+                           <Box fontWeight="bold">{`$${cartItems.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0).toFixed(2)}`}</Box>
+                        </Stack>
+                     </Stack>
+                     <HorizontalLine style={{ marginTop: '5px', borderColor: 'lightgray' }} />
+                     <Stack justifyContent="space-between" gap="20px" fontSize="0.9em" color="gray">
+                        <Box>Shipping</Box>
+                        <Stack flexDirection="row" alignItems="flex-end">
+                           <Box>Free</Box>
+                        </Stack>
+                     </Stack>
+                     <Stack justifyContent="space-between" gap="20px">
+                        <strong>Taxes</strong>
+                        <Stack flexDirection="row" alignItems="flex-end">
+                           <Box>Calculated at checkout</Box>
+                        </Stack>
+                     </Stack>
+                     <HorizontalLine style={{ marginTop: '10px', borderColor: 'lightgray' }} />
+                     <Stack justifyContent="space-between" gap="20px">
+                        <strong>Estimated total</strong>
+                        <Stack flexDirection="row" alignItems="flex-end">
+                           <Box fontWeight="bold">{`$${cartItems.reduce((acc, item) => acc + item.unitPrice * item.quantity, 0).toFixed(2)}`}</Box>
+                        </Stack>
+                     </Stack>
+                     <Stack
+                        justifyContent={totalOnly ? 'flex-end' : 'space-between'}
+                        alignItems="center"
+                        marginTop="20px"
                      >
-                        <strong>Total:</strong>
-                        <span>
-                           $
-                           {cartItems
-                              .reduce((acc, item) => acc + item.unitPrice * item.quantity, 0)
-                              .toFixed(2)}
-                        </span>
-                     </div>
-                  </div>
-               </li>
-            </ul>
+                        {!totalOnly && (
+                           <>
+                              <Link href="/products">Continue shopping...</Link>
+                              <Button variant="primary" onClick={handleCheckout}>Continue to checkout</Button>
+                           </>
+                        )}
+                     </Stack>
+                  </Stack>
+               </Card>
+            </>
          )}
-      </div>
+      </>
    );
 }
 
 interface CartItemDetailProps {
    item: CartItem;
-   removeItem: (cartItemId: string) => Promise<void>;
+   removeItem?: (cartItemId: string) => Promise<void>;
 }
 
-function CartItemDetail({ item, removeItem }: CartItemDetailProps) {
+export function CartItemDetail({ item, removeItem }: CartItemDetailProps) {
    const { cartItemId, quantity, productName: name, unitPrice: price, imageUrl } = item;
 
    return (
@@ -85,7 +150,7 @@ function CartItemDetail({ item, removeItem }: CartItemDetailProps) {
                width: '100%',
                border: '1px solid #e0e0e0',
                borderRadius: '8px',
-               backgroundColor: 'gray'
+               backgroundColor: 'lightgray'
             }}
          >
             <div
@@ -113,11 +178,14 @@ function CartItemDetail({ item, removeItem }: CartItemDetailProps) {
                   <span style={{ fontSize: '0.8em' }}>{`($${price.toFixed(2)} ea)`}</span>
                )}
             </div>
-            <FaTrash
-               style={{ fontSize: '0.9em', cursor: 'pointer' }}
-               onClick={() => removeItem(cartItemId)}
-            />
+            {removeItem && (
+               <FaTrash
+                  style={{ fontSize: '0.9em', cursor: 'pointer' }}
+                  onClick={() => removeItem(cartItemId)}
+               />
+            )}
          </div>
       )
    );
 }
+
