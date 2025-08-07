@@ -1,6 +1,7 @@
 import express, { Router, Request, Response } from 'express';
 import { pool } from '..';
 import { convertToCamelCase } from '../utils/convertToCamelCase';
+import { Product } from '@e-commerce/types';
 
 const router: Router = express.Router();
 
@@ -220,7 +221,7 @@ const router: Router = express.Router();
 router.get('/', async (req: Request, res: Response) => {
    try {
       let categoryId = req.query.category;
-      let result = await pool.query(
+      let result = await pool.query<Product>(
          `SELECT * FROM product ${categoryId ? 'WHERE categoryId = $1' : ''}`,
          categoryId ? [categoryId] : []
       );
@@ -272,8 +273,8 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
    try {
       const productId = req.params.id;
-      let result = await pool.query('SELECT * FROM product WHERE productId = $1', [productId]);
-      if (result.rows.length === 0) {
+      let result = await pool.query<Product>('SELECT * FROM product WHERE productId = $1', [productId]);
+      if (!result.rows[0]) {
          return res.status(404).send('Product not found');
       }
       res.status(200).send(convertToCamelCase(result.rows[0]));
@@ -346,7 +347,7 @@ router.get('/:id', async (req: Request, res: Response) => {
 router.post('/', async (req: Request, res: Response) => {
    try {
       const { name, description, price, stock, categoryId } = req.body;
-      let result = await pool.query(
+      let result = await pool.query<Product>(
          'INSERT INTO product (name, description, price, stock, categoryId) VALUES ($1, $2, $3, $4, $5) RETURNING *',
          [name, description, price, stock, categoryId]
       );
@@ -406,11 +407,11 @@ router.put('/:id', async (req: Request, res: Response) => {
       const { name, description, price, stock, categoryId } = req.body;
       const productId = req.params.id;
 
-      let result = await pool.query(
+      let result = await pool.query<Product>(
          'UPDATE product SET name = $1, description = $2, price = $3, stock = $4, categoryId = $5 WHERE productId = $6 RETURNING *',
          [name, description, price, stock, categoryId, productId]
       );
-      if (result.rows.length === 0) {
+      if (!result.rows[0]) {
          return res.status(404).send('Product not found');
       }
       res.status(200).send(convertToCamelCase(result.rows[0]));
@@ -461,10 +462,10 @@ router.put('/:id', async (req: Request, res: Response) => {
 router.delete('/:id', async (req: Request, res: Response) => {
    try {
       const productId = req.params.id;
-      let result = await pool.query('DELETE FROM "product" WHERE productId = $1 RETURNING *', [
+      let result = await pool.query<Product>('DELETE FROM "product" WHERE productId = $1 RETURNING *', [
          productId
       ]);
-      if (result.rows.length === 0) {
+      if (!result.rows[0]) {
          return res.status(404).send('Product not found');
       }
       res.status(200).send(convertToCamelCase(result.rows[0]));

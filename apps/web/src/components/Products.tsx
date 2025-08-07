@@ -1,8 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { Product, useProducts } from '@/lib/api';
+import { useProducts } from '@/lib/api';
 import { useCart } from '@/contexts/CartContext';
+import { Product } from '@e-commerce/types';
 
 export function Products() {
    const { products, loading } = useProducts();
@@ -53,7 +54,7 @@ function ProductDetails({ product }: ProductProps) {
             width: '100%',
             border: '1px solid #e0e0e0',
             borderRadius: '8px',
-            backgroundColor: 'gray',
+            backgroundColor: 'lightgray',
          }}
       >
          <div

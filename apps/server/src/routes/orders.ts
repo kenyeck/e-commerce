@@ -1,5 +1,6 @@
 import express, { Router, Request, Response } from 'express';
 import { pool } from '..';
+import { CompleteOrder, Order, OrderItem, Product, User } from '@e-commerce/types';
 
 const router: Router = express.Router();
 
@@ -142,7 +143,7 @@ const router: Router = express.Router();
 // Get all orders
 router.get('/', async (req: Request, res: Response) => {
    try {
-      let result = await pool.query(`
+      let result = await pool.query<Order>(`
          SELECT 
             o.orderId, 
             o.userId, 
@@ -216,7 +217,7 @@ router.get('/', async (req: Request, res: Response) => {
 router.get('/:id', async (req: Request, res: Response) => {
    try {
       const orderId = req.params.id;
-      let result = await pool.query(
+      let result = await pool.query<Order>(
          `
          SELECT 
             o.orderId, 
@@ -246,7 +247,7 @@ router.get('/:id', async (req: Request, res: Response) => {
          [orderId]
       );
 
-      if (result.rows.length === 0) {
+      if (!result.rows[0]) {
          return res.status(404).send('Order not found');
       }
       res.status(200).send(result.rows[0]);
@@ -326,14 +327,14 @@ router.post('/', async (req: Request, res: Response) => {
 
       try {
          // Validate user exists
-         let userCheck = await pool.query('SELECT userId FROM "user" WHERE userId = $1', [userId]);
-         if (userCheck.rows.length === 0) {
+         let userCheck = await pool.query<User>('SELECT userId FROM "user" WHERE userId = $1', [userId]);
+         if (!userCheck.rows[0]) {
             await pool.query('ROLLBACK');
             return res.status(400).send('User not found');
          }
 
          // Create the order
-         let orderResult = await pool.query(
+         let orderResult = await pool.query<Order>(
             'INSERT INTO "order" (userId, status) VALUES ($1, $2) RETURNING *',
             [userId, status || 'pending']
          );
@@ -349,12 +350,12 @@ router.post('/', async (req: Request, res: Response) => {
             }
 
             // Get product info and validate stock
-            let productResult = await pool.query(
+            let productResult = await pool.query<Product>(
                'SELECT productId, price, stock FROM product WHERE productId = $1 AND isActive = true',
                [item.productId]
             );
 
-            if (productResult.rows.length === 0) {
+            if (!productResult.rows[0] ) {
                await pool.query('ROLLBACK');
                return res.status(400).send(`Product ${item.productId} not found or inactive`);
             }
@@ -362,12 +363,12 @@ router.post('/', async (req: Request, res: Response) => {
             const product = productResult.rows[0];
 
             // Check stock availability
-            if (product.stock < item.quantity) {
+            if (product.stockQuantity < item.quantity) {
                await pool.query('ROLLBACK');
                return res
                   .status(400)
                   .send(
-                     `Insufficient stock for product ${item.productId}. Available: ${product.stock}, Requested: ${item.quantity}`
+                     `Insufficient stock for product ${item.productId}. Available: ${product.stockQuantity}, Requested: ${item.quantity}`
                   );
             }
 
@@ -391,7 +392,7 @@ router.post('/', async (req: Request, res: Response) => {
          await pool.query('COMMIT');
 
          // Fetch the complete order with items
-         let completeOrderResult = await pool.query(
+         let completeOrderResult = await pool.query<CompleteOrder>(
             `
             SELECT 
                o.orderId, 
@@ -508,17 +509,17 @@ router.put('/:id', async (req: Request, res: Response) => {
       updateFields.push(`updatedAt = CURRENT_TIMESTAMP`);
       updateValues.push(orderId);
 
-      let result = await pool.query(
+      let result = await pool.query<Order>(
          `UPDATE "order" SET ${updateFields.join(', ')} WHERE orderId = $${paramCount} RETURNING *`,
          updateValues
       );
 
-      if (result.rows.length === 0) {
+      if (!result.rows[0]) {
          return res.status(404).send('Order not found');
       }
 
       // Fetch complete order with items
-      let completeOrderResult = await pool.query(
+      let completeOrderResult = await pool.query<CompleteOrder>(
          `
          SELECT 
             o.orderId, 
@@ -607,7 +608,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
 
       try {
          // Get order items to restore stock
-         let orderItemsResult = await pool.query(
+         let orderItemsResult = await pool.query<OrderItem>(
             'SELECT productId, quantity FROM order_item WHERE orderId = $1',
             [orderId]
          );
@@ -621,7 +622,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
          }
 
          // Delete the order (order_item will be deleted automatically due to CASCADE)
-         let result = await pool.query('DELETE FROM "order" WHERE orderId = $1 RETURNING *', [
+         let result = await pool.query<Order>('DELETE FROM "order" WHERE orderId = $1 RETURNING *', [
             orderId
          ]);
 
@@ -684,7 +685,7 @@ router.delete('/:id', async (req: Request, res: Response) => {
 router.get('/:id/items', async (req: Request, res: Response) => {
    try {
       const orderId = req.params.id;
-      let result = await pool.query(
+      let result = await pool.query<OrderItem>(
          `
          SELECT 
             oi.orderItemId,
@@ -799,7 +800,7 @@ router.put('/:orderId/items/:itemId', async (req: Request, res: Response) => {
 
       try {
          // Get current order item
-         let currentItemResult = await pool.query(
+         let currentItemResult = await pool.query<OrderItem>(
             'SELECT * FROM order_item WHERE orderItemId = $1 AND orderId = $2',
             [itemId, orderId]
          );
@@ -814,11 +815,11 @@ router.put('/:orderId/items/:itemId', async (req: Request, res: Response) => {
 
          // Check stock if increasing quantity
          if (quantityDiff > 0) {
-            let productResult = await pool.query('SELECT stock FROM product WHERE productId = $1', [
+            let productResult = await pool.query<Product>('SELECT stock FROM product WHERE productId = $1', [
                currentItem.productId
             ]);
 
-            if (productResult.rows[0].stock < quantityDiff) {
+            if (productResult.rows[0].stockQuantity < quantityDiff) {
                await pool.query('ROLLBACK');
                return res.status(400).send('Insufficient stock for quantity increase');
             }
@@ -836,7 +837,7 @@ router.put('/:orderId/items/:itemId', async (req: Request, res: Response) => {
 
          updateValues.push(itemId, orderId);
 
-         let result = await pool.query(
+         let result = await pool.query<OrderItem>(
             `UPDATE order_item SET ${updateFields.join(', ')} WHERE orderItemId = $${paramCount} AND orderId = $${paramCount + 1} RETURNING *`,
             updateValues
          );
@@ -919,7 +920,7 @@ router.delete('/:orderId/items/:itemId', async (req: Request, res: Response) => 
 
       try {
          // Get order item to restore stock
-         let itemResult = await pool.query(
+         let itemResult = await pool.query<OrderItem>(
             'SELECT * FROM order_item WHERE orderItemId = $1 AND orderId = $2',
             [itemId, orderId]
          );
@@ -938,7 +939,7 @@ router.delete('/:orderId/items/:itemId', async (req: Request, res: Response) => 
          ]);
 
          // Delete order item
-         let result = await pool.query(
+         let result = await pool.query<OrderItem>(
             'DELETE FROM order_item WHERE orderItemId = $1 AND orderId = $2 RETURNING *',
             [itemId, orderId]
          );
