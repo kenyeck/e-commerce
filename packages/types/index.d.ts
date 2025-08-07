@@ -130,3 +130,26 @@ export interface ApiResponse<T> {
    error?: string;
    message?: string;
 }
+
+// Currently based on Stripe's Checkout Session
+export interface CheckoutSession {
+   id: string;
+   amount_subtotal: number;
+   amount_total: number;
+   currency: string;
+   payment_status: string;
+   customer_email?: string;
+   metadata?: Record<string, string>;
+   line_items?: {
+      data: {
+         price: {
+            id: string;
+            product: {
+               id: string;
+               name: string;
+            };
+         };
+         quantity: number;
+      }[];
+   };
+}

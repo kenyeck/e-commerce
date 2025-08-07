@@ -2,15 +2,15 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/dist/client/components/navigation';
 import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
-import { Stripe } from 'stripe';
 import { Box, Card, Stack } from '@e-commerce/ui';
 import { apiClient } from '@/lib/api';
+import { CheckoutSession } from '@e-commerce/types';
 
 export function CheckoutComplete() {
    const searchParams = useSearchParams();
    const [success, setSuccess] = useState<boolean>(false);
    const [text, setText] = useState<string>();
-   const [session, setSession] = useState<Stripe.Checkout.Session>();
+   const [session, setSession] = useState<CheckoutSession>();
 
    useEffect(() => {
       const getSession = async (sessionId: string) => {

@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { User, Product, Category, Cart, CartItem, LoginRequest, LoginResponse, CreateCheckoutSessionResponse } from '@e-commerce/types';
-import { Stripe } from 'stripe';
+import { User, Product, Category, Cart, CartItem, LoginRequest, LoginResponse, CreateCheckoutSessionResponse, CheckoutSession } from '@e-commerce/types';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 
@@ -214,8 +213,8 @@ class ApiClient {
       return response;
    }
 
-   async retrieveCheckoutSession(sessionId: string): Promise<Stripe.Checkout.Session> {
-      return this.request<Stripe.Checkout.Session>(`/api/checkout/sessions/${sessionId}`);
+   async retrieveCheckoutSession(sessionId: string): Promise<CheckoutSession> {
+      return this.request<CheckoutSession>(`/api/checkout/sessions/${sessionId}`);
    }
 }
 
