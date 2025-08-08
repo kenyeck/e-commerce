@@ -4,8 +4,9 @@ import { BaseProps } from "./base";
 export interface BoxProps extends BaseProps {}
 
 export function Box({ id, className, children, ...styleProps }: BoxProps) {
+   const boxStyles = className ? {} : { ...styleProps };
    return (
-      <div id={id} className={className} style={{ ...styleProps }}>
+      <div id={id} className={className} style={boxStyles}>
          {children}
       </div>
    );

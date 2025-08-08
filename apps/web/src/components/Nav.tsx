@@ -41,8 +41,8 @@ export function Nav() {
   }, []);
 
   return (
-    <nav className="fixed top-0 right-0 left-0 flex h-16 items-center justify-between bg-gray-100 p-4 pr-12 pl-12 shadow-md backdrop-blur dark:bg-gray-800/80 dark:text-white">
-      <Link className="text-2xl font-bold" href="/">
+    <nav className="fixed top-0 right-0 left-0 flex h-16 items-center justify-between bg-gray-100 p-4 pr-12 sm:pl-12 shadow-md backdrop-blur dark:bg-gray-800/80 dark:text-white">
+      <Link className="text-sm sm:text-xl font-bold" href="/">
         E-Commerce
       </Link>
       <div className="flex items-center gap-4">

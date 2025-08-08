@@ -1,91 +1,75 @@
-'use client';
-
-import Image from 'next/image';
-import { useProducts } from '@/lib/api';
-import { useCart } from '@/contexts/CartContext';
-import { Product } from '@e-commerce/types';
+"use client";
+import Image from "next/image";
+import { useProducts } from "@/lib/api";
+import { useCart } from "@/contexts/CartContext";
+import { Product } from "@e-commerce/types";
+import { Stack } from "../../../../packages/ui/src/stack";
+import { Box, Button, Loading } from "@e-commerce/ui";
 
 export function Products() {
-   const { products, loading } = useProducts();
+  const { products, loading } = useProducts();
 
-   if (loading) {
-      return <div style={{ fontSize: '2em' }}>Loading...</div>;
-   }
+  if (loading || products.length === 0) {
+    return (
+      <Box className="p-20">
+        <Loading />
+      </Box>
+    );
+  }
 
-   return (
-      <div>
-         <h1 style={{ fontSize: '2em'}}>Products</h1>
-         <ul style={{ listStyleType: 'none', paddingTop: '20px' }}>
-            {products.map((product) => (
-               <li key={product.productId} style={{ marginBottom: '20px' }}>
-                  <ProductDetails product={product} />
-               </li>
-            ))}
-         </ul>
-      </div>
-   );
+  return (
+    <Box>
+      <Box className="text-2xl font-bold">Products</Box>
+      <Stack className="list-none flex-col gap-3 pt-5">
+        {products.map((product) => (
+          <Box key={product.productId}>
+            <ProductDetails product={product} />
+          </Box>
+        ))}
+      </Stack>
+    </Box>
+  );
 }
 
 interface ProductProps {
-   product: Product;
+  product: Product;
 }
 
 function ProductDetails({ product }: ProductProps) {
-   const { name, price, imageUrl } = product;
-   const { addToCart: addProductToCart } = useCart();
+  const { name, description, price, imageUrl } = product;
+  const { addToCart: addProductToCart } = useCart();
 
-   const addToCart = async (product: Product) => {
-      const result = await addProductToCart(product.productId, 1);
-      if (result) {
-         alert(`${product.name} has been added to your cart!`);
-      }
-   };
+  const addToCart = async (product: Product) => {
+    const result = await addProductToCart(product.productId, 1);
+    if (result) {
+      alert(`${product.name} has been added to your cart!`);
+    }
+  };
 
-   return (
-      <div
-         style={{
-            display: 'flex',
-            flexDirection: 'row',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: '30px',
-            padding: '5px',
-            paddingRight: '30px',
-            width: '100%',
-            border: '1px solid #e0e0e0',
-            borderRadius: '8px',
-            backgroundColor: 'lightgray',
-         }}
-      >
-         <div
-            style={{
-               display: 'flex',
-               flexDirection: 'row',
-               justifyContent: 'flex-start',
-               alignItems: 'center',
-               gap: '50px',
-               padding: '5px'
-            }}
-         >
-            <Image src={imageUrl ?? ''} alt={name} width={150} height={150} />
-            <div>{name}</div>
-         </div>
-         <div style={{ paddingLeft: '5px' }}>{`$${price}`}</div>
-         <div style={{ paddingLeft: '5px' }}>
-            <button
-               style={{
-                  padding: '10px 20px',
-                  backgroundColor: '#0070f3',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '5px',
-                  cursor: 'pointer'
-               }}
-               onClick={() => addToCart(product)}
-            >
-               Add to Cart
-            </button>
-         </div>
-      </div>
-   );
+  return (
+    <Box className="w-full, flex items-center rounded-lg border border-gray-300 bg-gray-200 p-1 pr-2 dark:bg-gray-500">
+      <Image
+        src={imageUrl ?? ""}
+        alt={name}
+        width={125}
+        height={125}
+        className="rounded-lg p-1"
+      />
+      <Box className="mitems-center w-full justify-between md:flex">
+        <Box className="flex flex-col px-4 gap-2 md:gap-2">
+          <Stack className="flex-col">
+            <Box className="text-nowrap">{name}</Box>
+            <Box className="text-xs text-nowrap">{description}</Box>
+          </Stack>
+          <Box>{`$${price}`}</Box>
+        </Box>
+        <Button
+          className="primary-button mx-4 mt-2 pl-1"
+          onClick={() => addToCart(product)}
+        >
+          Add to Cart
+        </Button>
+      </Box>
+    </Box>
+  );
 }

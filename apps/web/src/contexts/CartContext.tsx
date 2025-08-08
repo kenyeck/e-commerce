@@ -2,8 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../lib/api';
-import type { Cart, CartItem } from '../lib/api';
 import { useAuth } from './AuthContext';
+import { Cart, CartItem } from '@e-commerce/types';
 
 interface CartContextType {
   cart: Cart | null;

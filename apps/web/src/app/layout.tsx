@@ -39,12 +39,12 @@ export default function RootLayout({
               <Nav />
               <main className="mt-0 mb-0 flex flex-1 items-start justify-center">
                 <div className="mx-auto flex max-w-screen-xl px-4">
-                  <div className="grid place-items-center gap-12 p-7 pt-20 pb-20">
+                  <div className="px-7 py-25">
                     {children}
                   </div>
                 </div>
               </main>
-              <footer className="pr-12 pl-12">
+              <footer className="px-12">
                   <HorizontalLine />
                 <div className="flex items-center justify-center gap-5">
                   <CommonLinks />
@@ -64,7 +64,7 @@ export default function RootLayout({
                     Privacy Policy
                   </Link>
                 </div>
-                <div className="align p-5 text-center text-sm text-gray-300 dark:text-gray-500">
+                <div className="w-full p-2 sm:p-5 text-xs sm:text-sm text-center text-gray-300 dark:text-gray-500">
                   {`© ${new Date().getFullYear()} ${process.env.NEXT_PUBLIC_SITE_NAME} Platform. All rights reserved.`}
                 </div>
               </footer>

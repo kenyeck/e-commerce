@@ -4,18 +4,12 @@ import { BaseProps } from './base';
 interface CardProps extends BaseProps {}
 
 export function Card({ id, className, children, ...styleProps }: CardProps) {
+   const cardStyles = className ? {} : { ...styleProps };
    return (
       <div
          id={id}
-         className={className}
-         style={{
-            border: '1px solid #e0e0e0',
-            borderRadius: '8px',
-            padding: '20px',
-            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.1)',
-            minWidth: '500px',
-            ...styleProps
-         }}
+         className={`border border-gray-300 mt-4 shadow-lg p-5 rounded-lg ${className ?? ''}`}
+         style={cardStyles}
       >
          {children}
       </div>

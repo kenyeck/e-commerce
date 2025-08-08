@@ -11,7 +11,7 @@ export function HorizontalLine({
    const lineStyleProps = className ? {} : { ...styleProps };
    return (
       <div className="py-2">
-         <hr id={id} className={className} {...lineStyleProps} />
+         <hr id={id} className={`border ${className}`} {...lineStyleProps} />
       </div>
    );
 }

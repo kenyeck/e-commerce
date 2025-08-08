@@ -184,6 +184,7 @@ router.get('/:id', async (req: Request, res: Response) => {
                      'quantity', ci.quantity,
                      'addedAt', ci.added_at,
                      'productName', p.name,
+                     'productDescription', p.description,
                      'unitPrice', p.price,
                      'imageUrl', p.image_url
                   )

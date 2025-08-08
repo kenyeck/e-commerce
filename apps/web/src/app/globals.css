@@ -29,5 +29,13 @@ body {
 }
 
 .nav-link {
-  @apply text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:underline;
+  @apply text-xs text-gray-700 hover:text-gray-900 hover:underline sm:text-sm dark:text-gray-300 dark:hover:text-white;
+}
+
+.primary-button {
+  @apply cursor-pointer rounded-lg bg-blue-600 px-6 py-2 text-white transition hover:bg-blue-700;
+}
+
+.secondary-button {
+  @apply cursor-pointer rounded-lg bg-gray-200 px-6 py-2 text-gray-800 transition hover:bg-gray-300;
 }

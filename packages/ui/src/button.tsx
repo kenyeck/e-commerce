@@ -38,6 +38,7 @@ export function Button({
 }: ButtonProps) {
 
    const buttonStyles = className ? {} : { ...(variant == 'primary' ? primaryButtonStyles : secondaryButtonStyles), ...styleProps };
+
    return (
       <button
          id={id}
