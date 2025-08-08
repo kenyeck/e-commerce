@@ -30,6 +30,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head></head>
+      <script
+        dangerouslySetInnerHTML={{
+          __html: `
+      (function() {
+        try {
+          var isLocalDark = localStorage.getItem("dark-mode") === "true";
+          var isSystemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          if (isLocalDark || (!("dark-mode" in localStorage) && isSystemDark)) {
+            document.documentElement.classList.add("dark");
+          }
+        } catch(e) {}
+      })();
+    `,
+        }}
+      />
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
@@ -39,32 +55,24 @@ export default function RootLayout({
               <Nav />
               <main className="mt-0 mb-0 flex flex-1 items-start justify-center">
                 <div className="mx-auto flex max-w-screen-xl px-4">
-                  <div className="px-7 py-25">
-                    {children}
-                  </div>
+                  <div className="px-7 py-25">{children}</div>
                 </div>
               </main>
               <footer className="px-12">
-                  <HorizontalLine />
+                <HorizontalLine />
                 <div className="flex items-center justify-center gap-5">
                   <CommonLinks />
                   <Link href="/about" className="nav-link">
                     About Us
                   </Link>
-                  <Link
-                    href="/contact"
-                    className="nav-link"
-                  >
+                  <Link href="/contact" className="nav-link">
                     Contact
                   </Link>
-                  <Link
-                    href="/privacy"
-                    className="nav-link"
-                  >
+                  <Link href="/privacy" className="nav-link">
                     Privacy Policy
                   </Link>
                 </div>
-                <div className="w-full p-2 sm:p-5 text-xs sm:text-sm text-center text-gray-300 dark:text-gray-500">
+                <div className="w-full p-2 text-center text-xs text-gray-300 sm:p-5 sm:text-sm dark:text-gray-500">
                   {`© ${new Date().getFullYear()} ${process.env.NEXT_PUBLIC_SITE_NAME} Platform. All rights reserved.`}
                 </div>
               </footer>

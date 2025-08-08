@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
-import { FaMoon, FaShoppingCart, FaSun, FaUser } from "react-icons/fa";
+import { FaShoppingCart, FaUser } from "react-icons/fa";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { CommonLinks } from "./CommonLinks";
-import { Button } from "../../../../packages/ui/src/button";
+import { ColorModeToggle } from "./ColorModeToggle";
 
 export function Nav() {
   const { isAuthenticated, logout } = useAuth();
@@ -94,32 +94,5 @@ export function Nav() {
         </Link>
       </div>
     </nav>
-  );
-}
-
-function ColorModeToggle() {
-  const [dark, setDark] = useState(false);
-
-  useEffect(() => {
-    const isDark = window.matchMedia("(class: dark)").matches;
-    setDark(document.documentElement.classList.contains("dark") || isDark);
-  }, []);
-
-  const toggle = () => {
-    setDark((prev) => {
-      const next = !prev;
-      if (next) {
-        document.documentElement.classList.add("dark");
-      } else {
-        document.documentElement.classList.remove("dark");
-      }
-      return next;
-    });
-  };
-
-  return (
-    <Button className="menu-icon" onClick={toggle}>
-      {dark ? <FaMoon /> : <FaSun />}
-    </Button>
   );
 }
