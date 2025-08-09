@@ -73,7 +73,7 @@ export default function RootLayout({
                     Privacy Policy
                   </Link>
                 </div>
-                <div className="w-full p-2 text-center text-xs text-gray-300 sm:p-5 sm:text-sm dark:text-gray-500">
+                <div className="w-full p-2 text-center text-xs text-gray-300 sm:p-5 dark:text-gray-500">
                   {`© ${new Date().getFullYear()} ${process.env.NEXT_PUBLIC_SITE_NAME} Platform. All rights reserved.`}
                 </div>
               </footer>
