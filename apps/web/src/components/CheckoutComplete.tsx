@@ -1,33 +1,16 @@
 'use client';
-import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/dist/client/components/navigation';
+import { useState, use } from 'react';
 import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { Box, Card, Stack } from '@e-commerce/ui';
-import { apiClient } from '@/lib/api';
 import { CheckoutSession } from '@e-commerce/types';
 
-export function CheckoutComplete() {
-   const searchParams = useSearchParams();
-   const [success, setSuccess] = useState<boolean>(false);
-   const [text, setText] = useState<string>();
-   const [session, setSession] = useState<CheckoutSession>();
-
-   useEffect(() => {
-      const getSession = async (sessionId: string) => {
-         setSuccess(true);
-         setText(sessionId ? 'Payment succeeded' : 'Payment canceled');
-         const s = await apiClient.retrieveCheckoutSession(sessionId);
-         setSession(s);
-         console.log('Checkout - Session:', s);
-      };
-      const sessionId = searchParams?.get('session_id');
-      if (sessionId) {
-         getSession(sessionId);
-      }
-   }, [searchParams]);
+export function CheckoutComplete({ session: s }: { session: Promise<CheckoutSession> }) {
+   const session = use(s);
+   const [success] = useState<boolean>(session.id ? true : false);
+   const [text] = useState<string>(session.id ? 'Payment succeeded' : 'Payment canceled');
 
    return (
-      <Suspense>
+      <Box>
          <Stack
             id="payment-status"
             alignItems="center"
@@ -65,7 +48,7 @@ export function CheckoutComplete() {
          <Box>
             {session && <pre>{JSON.stringify(session, null, 2)}</pre>}
          </Box>
-      </Suspense>
+      </Box>
    );
 
    return null;

@@ -1,17 +1,20 @@
 "use client";
+import { use } from "react";
 import Image from "next/image";
-import { useProducts } from "@/lib/api";
 import { useCart } from "@/contexts/CartContext";
 import { Product } from "@e-commerce/types";
-
 import { Box, Button, Loading, Stack } from "@e-commerce/ui";
 
-export function Products() {
-  const { products, loading } = useProducts();
+interface ProductsProps {
+  products: Promise<Product[]>;
+}
+
+export function Products({ products: p }: ProductsProps) {
+  const products = use(p);
 
   return (
     <Box>
-      {loading || products.length === 0 ? (
+      {products.length === 0 ? (
         <Box className="p-20">
           <Loading />
         </Box>
