@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useCart } from "@/contexts/CartContext";
 import { Stack, Box, Loading } from "@e-commerce/ui";
 import { CartSummary } from "./CartSummary";
@@ -19,12 +19,14 @@ export function Cart() {
     <div>
       {cartItems.length > 0 ? (
         <Box>
-          <Stack className="w-full items-center gap-2.5">
+          <Stack className="flex-col w-full items-center gap-2.5">
             <Box className="text-2xl font-bold">Cart</Box>
             <Box className="text-lg">{`(${cartItems.length} items)`}</Box>
           </Stack>
-          <CartDetail />
-          <CartSummary />
+          <Stack className="flex-col w-full items-center gap-6">
+            <CartDetail />
+            <CartSummary />
+          </Stack>
         </Box>
       ) : (
         <Box className="text-lg">{"Your cart is empty"}</Box>

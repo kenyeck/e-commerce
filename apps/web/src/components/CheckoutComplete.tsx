@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/dist/client/components/navigation';
 import { FaCheckCircle, FaTimesCircle } from 'react-icons/fa';
 import { Box, Card, Stack } from '@e-commerce/ui';
@@ -27,7 +27,7 @@ export function CheckoutComplete() {
    }, [searchParams]);
 
    return (
-      <>
+      <Suspense>
          <Stack
             id="payment-status"
             alignItems="center"
@@ -65,7 +65,7 @@ export function CheckoutComplete() {
          <Box>
             {session && <pre>{JSON.stringify(session, null, 2)}</pre>}
          </Box>
-      </>
+      </Suspense>
    );
 
    return null;

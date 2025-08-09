@@ -30,10 +30,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <head></head>
-      <script
-        dangerouslySetInnerHTML={{
-          __html: `
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
       (function() {
         try {
           var isLocalDark = localStorage.getItem("dark-mode") === "true";
@@ -44,8 +44,9 @@ export default function RootLayout({
         } catch(e) {}
       })();
     `,
-        }}
-      />
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
