@@ -22,7 +22,7 @@ dotenv.config({
 });
 
 export const pool = new Pool({
-   connectionString: 'postgresql://postgres:Jyc%5EV0%2532HxAPDI3@127.0.0.1:5432/postgres' //process.env.POSTGRES_URL_NON_POOLING || process.env.POSTGRES_URL,
+   connectionString: process.env.POSTGRES_URL,
 });
 
 // Test database connection on startup
