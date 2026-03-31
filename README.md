@@ -1,135 +1,85 @@
-# Turborepo starter
+# E-Commerce Platform
 
-This Turborepo starter is maintained by the Turborepo core team.
+A full-stack e-commerce application with product catalog, shopping cart, user authentication, order management, and Stripe checkout. Built as a Turborepo monorepo with a Next.js 15 storefront and an Express 5 API backed by PostgreSQL.
 
-## Using this example
+## Live Demo
 
-Run the following command:
+[e-commerce-web-eight-alpha.vercel.app](https://e-commerce-web-eight-alpha.vercel.app)
 
-```sh
-npx create-turbo@latest
-```
+## Features
 
-## What's inside?
+- **Product Catalog** — Browse products by category with search and filtering
+- **Shopping Cart** — Add/remove items, update quantities, persistent cart (user-based or session-based)
+- **User Authentication** — Register/login with Passport.js local strategy and bcrypt password hashing
+- **Checkout** — Stripe-powered payment flow with order creation
+- **Order History** — View past orders with itemized details and price-at-time tracking
+- **Shared UI Library** — Reusable component package (`@e-commerce/ui`) with Box, Button, Card, Stack, and Loading primitives
+- **API Documentation** — Swagger/OpenAPI auto-generated docs
+- **Dark/Light Mode** — Theme toggle
 
-This Turborepo includes the following packages/apps:
+## Tech Stack
 
-### Apps and Packages
+| Layer | Technologies |
+|-------|-------------|
+| **Frontend** | Next.js 15, React 19, TypeScript, Tailwind CSS 4 |
+| **Backend** | Express.js 5, TypeScript, PostgreSQL |
+| **Auth** | Passport.js (local strategy), bcrypt, express-session |
+| **Payments** | Stripe |
+| **Monorepo** | Turborepo, pnpm workspaces |
+| **Shared Packages** | UI components, ESLint config, TypeScript config, shared types |
+| **API Docs** | swagger-jsdoc, swagger-ui-express |
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Utilities
-
-This Turborepo has some additional tools already setup for you:
-
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
-
-### Build
-
-To build all apps and packages, run the following command:
+## Project Structure
 
 ```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
+e-commerce/
+├── apps/
+│   ├── server/       # Express.js REST API
+│   │   ├── database/         # PostgreSQL schema (DDL)
+│   │   └── src/
+│   │       ├── routes/       # Products, carts, orders, checkout, users, categories
+│   │       └── utils/        # Auth middleware, DB seeding, camelCase converter
+│   └── web/          # Next.js storefront
+│       └── src/
+│           ├── app/          # App Router pages (products, cart, checkout, login, profile)
+│           ├── components/   # Cart, Products, Login, Nav, Profile, Checkout
+│           └── contexts/     # AuthContext, CartContext (React Context API)
+└── packages/
+    ├── eslint-config/        # Shared ESLint rules
+    ├── types/                # Shared TypeScript types
+    ├── typescript-config/    # Shared tsconfig presets
+    └── ui/                   # Shared React component library
 ```
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+## Database Schema
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+PostgreSQL with UUID primary keys, automatic `updated_at` triggers, and referential integrity:
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+- **user** — Accounts with email verification and login tracking
+- **category** — Hierarchical product categories (self-referencing)
+- **product** — Catalog with Stripe product/price IDs, stock tracking, and JSONB dimensions
+- **cart / cart_item** — User or session-based carts with quantity constraints
+- **order / order_item** — Orders with price-at-time snapshots
 
-### Develop
+## Getting Started
 
-To develop all apps and packages, run the following command:
+### Prerequisites
 
-```
-cd my-turborepo
+- Node.js >= 18
+- pnpm 9+
+- PostgreSQL instance
+- Stripe account
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+### Installation
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
+```bash
+pnpm install
+pnpm run dev
 ```
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+### Seed the Database
 
+```bash
+cd apps/server
+pnpm run seed
 ```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
-
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
